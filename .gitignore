@@ -1,0 +1,6 @@
+*.un~
+.*.sw?
+.VimballRecord
+.netrwhist
+GetLatest/*
+undo/*

@@ -2,7 +2,7 @@
 " Global .vimrc Settings from 
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Thu 2010-09-23 19:43
+" Last update: Di 2011-04-05 20:46
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "  
@@ -113,7 +113,7 @@ set bs=2
 set sbr=+
 
 " Set shell
-set sh=bash
+set sh=zsh
 
 " Numberformat to use, unsetting bascially only allows decimal
 " octal and hex may make trouble if tried to increment/decrement
@@ -277,7 +277,13 @@ if (&term =~ '^screen')
   " set title for screen
   " VimTip #1126
   " set t_ts=k t_fs=\\ title
-  set title t_Co=256
+  if (!empty(expand("$COLORTERM")) && expand("$COLORTERM") =~ 'rxvt')
+     " urxt has only 88 colors
+     set  t_Co=88
+  else
+    set  t_Co=256
+  endif
+  set title
   set t_ts=k
   set t_fs=\
   let &titleold = fnamemodify(&shell, ":t")
@@ -292,6 +298,8 @@ elseif (&term =~ 'putty\|xterm-256\|xterm-color')
     "let &titleold = fnamemodify(&shell, ":t")
     "set t_AB=^[[48;5;%dm
     "set t_AF=^[[38;5;%dm
+elseif ($TERM == 'xterm' && $COLORTERM == 'gnome-terminal')
+    set t_Co=256 title term=xterm-256color
 endif
 
 " console vim has usually a dark background,
@@ -304,8 +312,8 @@ endif
 
 " Set a color scheme. I especially like 
 " desert and darkblue
-if (&t_Co == 256)
-    colorscheme cb256
+if (&t_Co == 256) || (&t_Co == 88)
+    colorscheme desert256
     "colorscheme desert
     " Highlight of Search items is broken in desert256 
     " so fix that
@@ -399,12 +407,6 @@ source ~/.vim/abbrev.vim
 " 2html setting:
 let html_whole_filler=1
 
-" some debug mappings
-noremap g+ g+\|:echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
-noremap g- g-\|:echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
-noremap g\ :echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
-
-":command! Print echo 'test print'
-":command! X echo 'test X'
-":command! Next echo 'test Next'
-":command! Pint1 echo 'print'
+" experimental and debug settings
+" (possibly not even available in vanilla vim)
+source ~/.vim/experimental.vim

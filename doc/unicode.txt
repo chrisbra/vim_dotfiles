@@ -1,0 +1,187 @@
+*unicode.txt* A completion plugin for Unicode glyphs
+
+Author:  Christian Brabandt <cb@256bit.org>
+Version: 0.8 Thu, 30 Sep 2010 20:55:43 +0200
+Copyright: (c) 2009, 2010 by Christian Brabandt 	    *unicode-copyright*
+           The VIM LICENSE applies to unicode.vim and unicode.txt
+           (see |copyright|) except use unicode instead of "Vim".
+	   NO WARRANTY, EXPRESS OR IMPLIED.  USE AT-YOUR-OWN-RISK.
+
+
+==============================================================================
+                                                              *unicode-plugin*
+1. Functionality
+
+This plugin was written to enable an easier use of any Unicode glyph
+available. The unicode.vim Plugin uses the data available from the Unicode
+Consortium's website (http://www.unicode.org) to let you enter Unicode
+characters using a completion function.
+
+By default, the plugin creates a directory unicode below the path autoload
+where this plugin is located. Within this directory it will store  the file
+UnicodeData.txt from http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
+which it will try to download using |netrw| . If this is unsuccessfull, or
+you do not have |netrw| enabled, dowload the file manually and save it in the
+unicode directory below the autoload directory in which unicode.vim is
+located.
+
+
+						 *:EnableUnicodeCompletion*
+By default the plugin is not enabled. To enable it enter: >
+
+    :EnableUnicodeCompletion
+
+When you run this command, unicode.vim checks for the availability of
+UnicodeData.txt from the Unicode Consortium, and if it is not available,
+it will try to download it. 
+
+This will also set up the completion function |completefunc| to use for your
+buffer. You can use |i_CTRL-X_CTRL-U| then to start the completion. 
+
+						 *:DisableUnicodeCompletion*
+If you want to disable the plugin, enter >
+
+    :DisableUnicodeCompletion
+<
+	 						 *:UnicodeName*
+Suppose, you want to know, what the Unicode Name for the Character under the
+cursor is. You simply enter the ex command: >
+
+    :UnicodeName
+
+The plugin will then output the character, the character's hexadecimal value
+and the official Unicode name.
+
+==============================================================================
+						    *unicode-plugin-usage*
+2. Completing Unicode chars
+
+If you have enabled the plugin using |:EnableUnicodeCompletion| then there are
+2 possibilities to use the plugin. You can either enter the Unicode Character
+name, or enter the Unicode-Codeposition.
+
+For example, you would like to enter Æ, so you enter AE and press |<C-X><C-U>|
+while in insert mode. Alternatively you can enter the Unicode-Codepoint: U+C6
+and press |<C-X><C-U>| and the popup menu will show you all characters, that
+have a codepoint like C6 with leading zeros, eg. U+00C6 and U+0C66
+
+A popup menu will appear, showing you the Unicode-Codeposition value, the
+Unicode Character Name and the Unicode Character (and if you have enabled it,
+it can also show you the digraph characters needed to create this character in
+paranthesis, see |unicode-plugin-config| ). You can scroll down in the menu by
+pressing <C-N> and up by pressing <C-P>.
+
+Regardless, of you configured the plugin to display the digraph shortcut in
+the menu, a |preview-window| will be opened, if your Vim was compiled with the
+quickfix-feature and the preview window displays the hexadecimal Unicode
+Codepoint, the name, the digraph characters in parenthesis (if they exist)
+followed by the glyph itself.
+
+						    *unicode-plugin-config*
+The plugin can be customized to include the 2 digraph characters you have to
+type, to get that character. This works only, if there is a digraph defined
+for that Unicode char. If you would like this you need to set
+g:showDigraphCode, e.g. >
+
+    :let g:showDigraphCode=1
+
+This functionality is by default disabled, cause it seems to cause some delay
+and screen-rendering errors in the menu. However, the preview window will
+always show the digraph character in parenthesis. 
+Enter >
+
+    :let g:showDigraphCode=0
+
+to disable the Digraph feature afterwards.
+
+If you would like to specify a different URL from which to download
+UnicodeData.txt, enter the URL as: >
+
+    :let g:unicode_URL='http:....'
+
+To force downloading the file from that new url, enter >
+
+    :call unicode#CheckUniFile(1)
+
+If you'd like Unicode completion to be always enabled, you can set the
+variable g:enableUnicodeCompletion to 1 in your |.vimrc| like this: >
+
+     let g:enableUnicodeCompletion = 1
+<
+Thus, you won't need to use EnableUnicodeCompletion, it will be already
+available.
+
+						     *unicode-plugin-error*
+If the plugin gives an error or does not complete anything, first check, that
+UnicodeData.txt from the Unicode Consortium has been successfully downloaded.
+It should be located below the autoload/unicode.vim script in a directory
+called unicode. So if you have installed unicode.vim into
+/home/user/.vim, UnicodeData.txt should be located at:
+/home/user/.vim/autoload/unicode/UnicodeData.txt and should look like this:
+
+0020;SPACE;Zs;0;WS;;;;;N;;;;;
+0021;EXCLAMATION MARK;Po;0;ON;;;;;N;;;;;
+0022;QUOTATION MARK;Po;0;ON;;;;;N;;;;;
+0023;NUMBER SIGN;Po;0;ET;;;;;N;;;;;
+0024;DOLLAR SIGN;Sc;0;ET;;;;;N;;;;;
+0025;PERCENT SIGN;Po;0;ET;;;;;N;;;;;
+0026;AMPERSAND;Po;0;ON;;;;;N;;;;;
+0027;APOSTROPHE;Po;0;ON;;;;;N;APOSTROPHE-QUOTE;;;;
+0028;LEFT PARENTHESIS;Ps;0;ON;;;;;Y;OPENING PARENTHESIS;;;;
+0029;RIGHT PARENTHESIS;Pe;0;ON;;;;;Y;CLOSING PARENTHESIS;;;;
+[...]
+(several thounsand lines following)
+
+If the file looks correct, and the plugin is still not working correctly
+contact the maintainer. You'll find his email-adress in the first line of this
+document. Please be patient, it might take a while, until I can take care of
+your report.
+
+==============================================================================
+					*i_CTRL-X_CTRL-G* *digraph-completion*
+3. Completing digraphs
+
+CTRL-X CTRL-G		Search for the character in front of the cursor and
+			try to complete this letter using a digraph. If there
+			is no letter in front of the cursor, a list with all
+			available digraphs is shown in a popup menu.
+			(Think of Glyph)
+       CTRL-N           Use next match. This match replaces the previous
+			match.
+       CTRL-P           Use previous match. This match replaces the previous
+			one.
+
+
+==============================================================================
+4. unicode History			              *unicode-plugin-history*
+    0.8: Sep 30, 2010:  - Fix an issue with configuring the plugin (Thanks jgm)
+			- Code cleanup
+			- Make use of the preview window, when completing
+			  Digraph or Unicode Glyphs
+			- By default, the Digraph Glyphs will now be enabled
+			  using |i_Ctrl-X_CTRL-G| instead of using
+			  Ctrl-X_Ctrl-C which wouldn't work in a terminal
+			- |:UnicodeName| now displays the hexadecimal Unicode
+			  Codepoint instead of the decimal one (as this seems
+			  to be the official way to display unicode
+			  codepoints).
+    0.7: Sep 23, 2010:  - |:UnicodeName|
+                        - specify g:enableUnicodeCompletion to have unicode
+			  completion always enabled.
+    0.6: Aug 26, 2010:  - many small bugfixes with regard to error-handling
+                          and error displaying
+                        - use default netrw_http_cmd (instead of hardwiring
+			  wget)
+			- small documentation update (Inlude a snippet of
+			  UnicodeData.txt and get rid of Index.txt data)
+    0.5: Apr 19, 2010:  Created a public repository for this plugin at
+			    http://github.com/chrisbra/unicode.vim
+    0.4: Feb 01, 2010:  Use UnicodeData.txt to generate Data
+                        (Index.txt does not contain all glyphs).
+			Check for empty file UnicodeData.txt
+    0.3: Oct 27, 2009:	Digraph Completion
+    0.2: Oct 22, 2009:	Enabled GetLatestScripts (|GLVS|)
+    0.1: Oct 22, 2009:	First working version
+
+==============================================================================
+vim:tw=78:ts=8:ft=help

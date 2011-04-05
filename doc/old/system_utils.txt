@@ -1,0 +1,256 @@
+*system_utils.txt*	API plugin wrapping external file- and text-tools
+*system_utils.vim*	For Vim version 6.0.+	Last change: 07th mar 2003
+
+
+		system_utils Plugin MANUAL	by Luc Hermitte
+			version 1.08		<hermitte {at} free {dot} fr>
+
+
+------------------------------------------------------------------------------
+Contents~
+|SU-presentation|	Presentation
+    |SU-system|		Environment detection
+    |SU-MsWindows|	MsWindows specificities
+    |SU-functions|	VimL API Functions
+|SU-install|		Installation notes
+|SU-credits|		Credits
+
+------------------------------------------------------------------------------
+1. Presentation						*SU-presentation*
+
+system_utils.vim defines wrappers for external tools and shells. The declared
+purpose of this plugin is to propose, to VimL developpers, a set of portable
+ways to handle files and some external tools.
+
+99% of this plugin can be seen as an API meant to help us writing portable VimL
+scripts.
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+1.1. Environment detection				*SU-system*
+
+When loaded, system_utils.vim tries to detect the kind of system Vim runs on.
+Is it (or does it looks like) an Unix system ? Or is it a Microsoft system ?
+
+Note: At this time, I don't manage Macintosh OSes or any other OS.
+
+
+Detection algorithm ~
+							    *SystemDetected()*
+The criteria used to detect the system are:
+- first: 'shell' =~ "sh" -> the shell Vim is started with (cf. |SHELL|) looks
+  like an Unix shell, then the system is recognized as an "unix" system -- even
+  if Vim was started from Cygwin on a Microsoft platform.
+- then: has('win16') or win32 or dos16 or dos32 -> the system is recognized
+  as an "msdos" (ersatz) system.
+- otherwise: an error message is raised -> contact me in order to enhance the
+  plugin and support other configurations.
+
+VimL programmers can know the system detected thanks to the function
+|SystemDetected()|.
+
+
+Presence of an Unix-like layer ~
+				*UnixLayerInstalled()* *g:unix_layer_installed*
+It is possible to specify to system_utils.vim that Unix tools are available on
+a non Unix system.
+For instance, you may have installed Cygwin or Unixutils on a MsWindows box, and
+you may want to use unix-tools from Vim even if Vim has not been launched from
+an Unix shell but from Microsoft's files explorer.
+
+So, as a Vim user having system_utils.vim installed, you may be interested in
+setting the boolean global variable |g:unix_layer_installed| into your .vimrc.
+
+VimL programmers can know if such an Unix layer has been installed thanks to the
+boolean function: |UnixLayerInstalled()|.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+1.2. Ms-Windows specificities				*SU-MsWindows*
+
+«Insert here»
+
+sort
+
+Auto-config~
+*:GoCmd*
+*:GoBash*
+*:GoZsh*
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+1.3. VimL API Functions					*SU-functions*
+
+All these functions are aimed at VimL programmers who wish to write portable
+scripts.
+
+|EnsurePath()|		Make sure a directory exists ;
+|FixPathName()|		Fix pathnames according to the current system ;
+|SystemDetected()|	Returns the current system that has been recognized ;
+|UnixLayerInstalled()|	Returns whether an Unix layer has been installed ;
+|SU-wrapper-functions|	Wrapper functions for files- and text-utils.
+
+
+1.3.1. EnsurePath({pathname})			*EnsurePath()* *:EnsurePath*
+
+|EnsurePath()| and |:EnsurePath| make sure a directory exists.
+If the directory does not exist before the call, it is created.
+If the parent directories of the required directory do not exist, they are
+created on the way.
+
+The function |EnsurePath()| returns 1 if the directory has been created
+successfully, 0 otherwise.
+
+Note: If {pathname} points to a file, an error is raised
+
+It has been tested on:         
+    WinMe + command.com
+    WinMe + Cygwin (the VIM version, I used, being the one released on the VIM
+	& CREAM web sites and ftps for PC/MsWindows systems).
+	BTW, if you run VIM from the MsWindows files explorer and want to use
+	Cygwin commands (like `mkdir' here), be sure to have your $PATH correctly
+	set.
+    WinXP + Cygwin (same comments as above)
+Todo: Retest on:
+    Win95 + command.com & Cygwin
+    WinNT + cmd & zsh & Cygwin
+    Sun/Solaris + tcsh
+
+
+1.3.2. FixPathName({pathname} [,{shellslash} [,{quote-char}]])	*FixPathName()*
+
+This function corrects the {a:pathname} passed in parameter and, returns the
+newly fixed pathname that will be usable will external tools. 
+
+Under Win32 boxes, it will build the new path according to the value of
+{shellslash}. Under other systems, the new path will be exclusively composed of
+forward slashes. According to {quote-char}, quote characters may be added around
+the returned pathname.
+
+For instance, paths like "c:\Program Files/alongpath/some\ spaces/foo" will be
+changed into:
+    c:\Program Files\alongpath\some spaces\foo   + {quote-char} around
+or  c:/Program\ Files/alongpath/some\ spaces/foo + {quote-char} around
+according to {shellslash} value.
+
+Internal considerations~
+    {quote-char} will value the character: 
+	1- {a:quote-char} if given,
+	2- "" (empty string) otherwise.
+    {shellslash} will value the boolean:
+	1- {a:shellslash} if given
+	2- 'shellslash' if win16, win32, dos16 or dos32 
+	            and if |SystemDetected()| != "msdos"
+	3- 1 if |SystemDetected()| == "unix"
+    if {quote-char}=="" && !{shellslash} && |SystemDetected()|=="msdos"
+	if 'shell' == "command.com" => {quote-char} <- ''
+	else                        => {quote-char} <- '"'
+
+Note: If you are using "command.com" (and not cmd.exe which is available on
+MsWindows NT series), you may run into troubles if the {a:pathname} contains
+spaces.
+
+Exemples~
+    This mapping opens the current file in MsWindows's files explorer
+    [Note: this works if the 'shell' is bash or $COMSPEC]: >
+	nmap ,view :exe '!start explorer '.FixPathName(expand('%:p'),0)<cr>
+
+
+1.3.3. Wrapper functions for files- and text-utils	*SU-wrapper-functions*
+
+All the following functions are wrappers that return (as a string) the name of
+the program to use according to their associated task. 
+They all expect an optional list of files and parameters (expressed in the UNIX
+form: '-param'). Every filename passed to these functions are converted to an
+usable form (by the shell and the tool wrapped) thanks to |FixPathName()|.
+
+*SysPrint()*	concatenates and prints the content of the specified files to
+		the standard output.
+*SysRemove()*	deletes the specified files.
+*SysRmdir()*	deletes the specified directories.
+*SysMkdir()*	creates the specified directories.
+*SysCopy()* 	copies the specified file(s) to the specified location.
+*SysMove()*	moves (only on unices) or rename the specified file.
+*SysTouch()*	creates an empty file, or update the stamp of the file.
+*SysSort()* 	sorts the contents of a file.
+
+*:Sort* 	VimL emulation of `sort' that is case-sensitive and works on
+		ranges. Note: MsWindows's SORT.EXE is not case-sensitive ; since
+		MsDos 3.something.
+*:Uniq*		VimL emulation of `uniq' that works on ranges.
+
+Exemples~
+    Echoes the contents of the current file sorted by lines: >
+	:echo system( SysSort(expand('%:p') )
+<   Insert (in the current buffer) the misspellings (sorted) of {filename}: >
+	:exe ':r!'. SysPrint(filename) . ' | aspell -l | ' . SysSort()
+<   Delete the file {tempfile}: >
+	:echo system( SysRemove('--force', tempfile) )
+<   Display the help of the command `copy': >
+	:echo system( SysCopy('-h') )
+<   Defines a command that opens the current file in the file explorer: >
+	nmap foo :exe '!start explorer '.FixPathName(expand('%:p'),0)<cr>
+	" Note: 'start' and ',0' are required in order to work from cygwin-bash
+	" and the files explorer.
+<   Other way to do the same thing: >
+	nnoremap <buffer> <c-l>v 
+	  \ :update<cr>:call system("explorer " . 
+	  \         FixPathName(expand("%:p"),0,((&sh=~'sh')?"'":'"')))<cr>
+
+Default implementation of the different wrappers~
+    Wrappers		*nix prog.	MsWindows prog. ~
+      |SysPrint()|	  cat		  TYPE
+      |SysRemove()|	  rm		  DEL
+      |SysRmdir()|	  rm -r		  RD /S/Q
+      |SysMkdir()|	  mkdir		  MD
+      |SysCopy()|	  cp -p		  COPY
+      |SysMove()|	  mv		  REN
+      |SysTouch()|	  touch		  gvim -c wq
+      |SysSort()|	  sort		  SORT
+
+
+------------------------------------------------------------------------------
+2. Installation notes					*SU-install*
+
+Extract the tarball archive into one of your 'runtimepath' paths -- for
+instance $HOME/.vim/ (or $HOME/vimfiles/ on MsWindows boxes).
+    cd $HOME/.vim
+    gzip -cd lh-system_utils.tar.gz | tar xf -
+
+At the end, your will have the files:
+{rtp}/
+ +--> plugin/system_utils.vim
+ +--> doc/system_utils.txt
+
+And don't forget to add this help file to Vim documentation ; cf.
+|add-local-help|	
+
+
+Where to get this plugin~
+
+This plugin can be downloaded:
+- on my web site: <http://hermitte.free.fr/vim/general.php>
+- on sourceforge: <http://vim.sourceforge.net/scripts/script.php?script_id=???>
+
+
+Configuration~
+
+If you have an Unix layer installed on your non-unix system, you may wish to
+to use this layer from the different functions of the API. Do so by setting
+|g:unix_layer_installed| to 1.
+
+
+------------------------------------------------------------------------------
+3. Credits						*SU-credits*
+
+I need to thank:
+- Piet Delport and Preben 'Peppe' Guldberg for their brainstorming that resulted
+  in the `uniq' emulation proposed in system_utils.vim ;
+- Robert Webb for the emulation of `sort' he wrote ;
+- Jérôme Guigue that helped me test and debug parts of system_utils.vim ;
+- and Vim maintainers and developers of course. ^_^ 
+
+
+------------------------------------------------------------------------------
+ © Luc Hermitte, 2001-2003 <http://hermitte.free.fr/vim/>
+ VIM: let b:VS_language = 'american' 
+ vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:

@@ -2,7 +2,7 @@
 " Vim Setting for Mappings
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Do 2009-09-17 17:13
+" Last update: Fr 2010-10-08 13:39
 
 "-------------------------------------------------------
 " Useful mappings
@@ -38,9 +38,9 @@ command! -bang Q q<bang>
 " noremap q: :q
 " Pressing `Enter' inserts a new line
 " only if buffer is modifiable (e.g. not in help or quickfix window)
-if (&ma)
-    nmap <buffer> <CR> i<CR><ESC>
-endif
+" if (&ma)
+"    nmap <buffer> <CR> i<CR><ESC>
+" endif
 
 " In help files, map Enter to follow tags
 au BufWinEnter *.txt if(&ft =~ 'help')| nmap <buffer> <CR> <C-]> |endif
