@@ -9,7 +9,7 @@ noremap g\ :echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
 
 
 hi User1 term=standout ctermfg=0 ctermbg=11 guifg=Black guibg=Yellow
-function MySTL()
+function! MySTL()
     if has("statusline")
 	let stl='%-3.3n %f %{exists("b:mod")?("[".b:mod."]") : ""} %h%m%r%w[%{strlen(&ft)?&ft:"none"},%{(&fenc==""?&enc:&fenc)},%{&fileformat}%{(&bomb?",BOM":"")}]%=%-10.(%l,%c%V%) %p%%'
 	if exists("*CSV_WCol")

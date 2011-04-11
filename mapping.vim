@@ -2,7 +2,7 @@
 " Vim Setting for Mappings
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Fr 2010-10-08 13:39
+" Last update: Mo 2011-04-11 19:57
 
 "-------------------------------------------------------
 " Useful mappings
@@ -120,6 +120,27 @@ map ,V :%!par w50<CR>
 " noremap __a_cmd oAttach:<Space>
 " noremap __a_scmd 1G/^$/<CR>:noh<CR>OAttach:<Space>
 " map <leader>a ma__a_start__a_scmd
+
+" make n/N for search work more intuitevely
+" http://groups.google.com/group/vim_use/msg/6ff8586688e52b7d
+" ono m //e<CR>
+xn <script> m //e<SID>SelOff<CR>
+cno <expr> <SID>SelOff &sel=="exclusive" ? "+1" : ""
+" do the right thing after o_//e and .
+no <script> n //<CR><SID>HistDel
+no <script> N ??<CR><SID>HistDel
+sunm n|sunm N
+nn <silent> <SID>HistDel :call<sid>HistDel(0)<CR>
+vn <silent> <SID>HistDel :<C-U>call<sid>HistDel(1)<CR>
+ino <silent> <SID>HistDel <C-R>=<sid>HistDel(0)<CR>
+func! <sid>HistDel(vmode)
+    if a:vmode
+        normal! gv
+    endif
+    call histdel('/', -1)
+    return ""
+endfunc
+
 
 
 " Notations

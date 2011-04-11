@@ -2,7 +2,7 @@
 " Global .vimrc Settings from 
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Di 2011-04-05 20:46
+" Last update: Mo 2011-04-11 19:55
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "  
@@ -328,9 +328,6 @@ endif
 " In Diff-Mode turn off Syntax highlighting
 if &diff | syntax off | endif
 
-" Special characters that will be shown, when set list is on
-set listchars=tab:>-,trail:~,eol:$
-
 " Set the tags file
 "set tags=~/tags
 
@@ -377,9 +374,11 @@ digraphs .3 8230
 
 if &encoding == "utf-8"
 "    set listchars=eol:$,trail:·,tab:>>·,extends:>,precedes:<
-    set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<
+    "set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
+     exec "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026"
 else
-    set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<
+" Special characters that will be shown, when set list is on
+    set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
 endif
 
 
