@@ -3,9 +3,9 @@
 set diffopt+=horizontal
 " 
 " some debug mappings
-noremap g+ g+\|:echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
-noremap g- g-\|:echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
-noremap g\ :echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
+"noremap g+ g+\|:echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
+"noremap g- g-\|:echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
+"noremap g\ :echo 'Change: '.changenr().' Save: '.changenr(1)<cr>
 
 
 hi User1 term=standout ctermfg=0 ctermbg=11 guifg=Black guibg=Yellow
@@ -38,3 +38,18 @@ lan ctype C
 "set backup
 "set bkc=yes
 "set backupskip=
+"set rnu
+"set nonu
+"set list
+
+au TabLeave * :let g:last_tab=tabpagenr()
+
+fu! <sid>LastTab()
+    if !exists("g:last_tab")
+	return
+    endif
+    exe "tabn" g:last_tab
+endfu
+
+nnoremap <silent> <F8> :call <sid>LastTab()<cr>
+nmap <silent> <F7> :exe "tabn" exists("g:last_tab") ? g:last_tab :''<cr>

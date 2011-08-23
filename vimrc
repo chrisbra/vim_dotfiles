@@ -2,7 +2,7 @@
 " Global .vimrc Settings from 
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Mo 2011-04-11 19:55
+" Last update: Di 2011-08-23 21:44
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "  
@@ -131,7 +131,7 @@ set nrformats=
 set dictionary=/usr/share/dict/words
 
 "au FileType mail   so ~/.vim/mail.vim
-au FileType tex    so ~/.vim/latex.vim
+"au FileType tex    so ~/.vim/latex.vim
 au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
 au BufNewFile,BufRead *.csv setf csv
 
@@ -274,15 +274,14 @@ if version >= 600
 endif
 
 if (&term =~ '^screen')
+  if expand("$COLORTERM") !~ 'rxvt'
+    set t_Co=256
+  else
+    set t_Co=88
+  endif
   " set title for screen
   " VimTip #1126
   " set t_ts=k t_fs=\\ title
-  if (!empty(expand("$COLORTERM")) && expand("$COLORTERM") =~ 'rxvt')
-     " urxt has only 88 colors
-     set  t_Co=88
-  else
-    set  t_Co=256
-  endif
   set title
   set t_ts=k
   set t_fs=\
@@ -302,6 +301,23 @@ elseif ($TERM == 'xterm' && $COLORTERM == 'gnome-terminal')
     set t_Co=256 title term=xterm-256color
 endif
 
+" Set a color scheme. I especially like 
+" desert and darkblue
+if (&t_Co == 256) || (&t_Co == 88)
+    if exists("$COLORTERM") && expand("$COLORTERM") =~ "rxvt"
+	set t_Co=88
+	colors black_angus
+    else
+	colorscheme desert256
+    "colorscheme desert
+    " Highlight of Search items is broken in desert256 
+    " so fix that
+    "hi Search ctermfg=0 ctermbg=159
+    endif
+else
+    colorscheme desert
+endif
+
 " console vim has usually a dark background,
 " while in gvim I usually use a light background
 "if has("gui_running")
@@ -309,21 +325,6 @@ endif
 "else
 "    set bg=dark 
 "endif
-
-" Set a color scheme. I especially like 
-" desert and darkblue
-if (&t_Co == 256) || (&t_Co == 88)
-    colorscheme desert256
-    "colorscheme desert
-    " Highlight of Search items is broken in desert256 
-    " so fix that
-    "hi Search ctermfg=0 ctermbg=159
-else
-    colorscheme desert
-endif
-" Highlight of Search items is broken in desert256 
-" so fix that
-
 
 " In Diff-Mode turn off Syntax highlighting
 if &diff | syntax off | endif
@@ -381,6 +382,12 @@ else
     set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
 endif
 
+" experimental Setting to force 8 colors mode when this variable is set
+if expand("$TEST8COLORTERM")=='1'
+    set t_Co=8
+    colors default
+endif
+
 
 " source local .vimrc
 " This is potentialy dangerous
@@ -406,6 +413,20 @@ source ~/.vim/abbrev.vim
 " 2html setting:
 let html_whole_filler=1
 
+" source matchit
+ru macros/matchit.vim
+
 " experimental and debug settings
 " (possibly not even available in vanilla vim)
 source ~/.vim/experimental.vim
+
+" In case /tmp get's clean out, make a new tmp directory for vim:
+command! Mktmpdir call mkdir(fnamemodify(tempname(),":p:h"),"",0700)
+
+" if ctag or cscope open a file that is already opened elsewhere, make sure to
+" open it in Read-Only Mode
+" http://groups.google.com/group/vim_use/msg/5a1726ea0fd654d1
+if exists("##SwapExists")
+    autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
+endif
+

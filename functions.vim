@@ -2,7 +2,7 @@
 " Vim Functions from 
 " Christian Brabandt cb@256bit.org
 "
-" Last update: So 2010-09-05 09:13
+" Last update: Fr 2011-05-06 07:37
 " 
 "-------------------------------------------------------
 
@@ -340,7 +340,7 @@ function! CleverTab()
       return "\<Tab>" 
   endif 
 endfunction 
-inoremap <Tab> <C-R>=CleverTab()<CR> 
+"inoremap <Tab> <C-R>=CleverTab()<CR> 
 
 "augroup TimeSpentEditing
 "au!
