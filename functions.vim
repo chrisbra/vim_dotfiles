@@ -2,7 +2,7 @@
 " Vim Functions from 
 " Christian Brabandt cb@256bit.org
 "
-" Last update: Fr 2011-05-06 07:37
+" Last update: Mo 2011-09-05 10:40
 " 
 "-------------------------------------------------------
 
@@ -311,8 +311,30 @@ command! MakePatch :call DiffUnified()
 
 if has('user_commands')
         "command! -nargs=0 -bar WhatSyntax echomsg synIDattr(synID(line("."), col("."), 1), "name")
-        command! -nargs=0 WhatSyntax echomsg synIDattr(synID(line("."), col("."), 0), "name")
+        "command! -nargs=0 WhatSyntax echomsg synIDattr(synID(line("."), col("."), 0), "name")
+        command! -nargs=0 WhatSyntax call WhatSyntax()
 endif
+
+fu! WhatSyntax()
+" show highlight groups under cursor with F10
+    if exists(':for')
+         echo "<" .
+	    \ synIDattr(synIDtrans(synID(line('.'),col('.'),1)),'name')
+	    \ .'> from:'
+        let indent = ''
+        for syn_id in synstack(line('.'), col('.'))
+          echo indent.'<'.synIDattr(syn_id,"name").'>' 
+          let indent .= ' '
+        endfor
+        unlet indent
+    else
+  " can't do for loop, at least display something
+    echo "hi<" . 
+	\ synIDattr(synID(line("."),col("."),1),"name")
+        \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+        \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"
+    endif
+endfu
 
 " RS will execute a search within a visually selected area
 " mark the area with v and type :RS pattern
