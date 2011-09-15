@@ -2,7 +2,7 @@
 " Global .vimrc Settings from 
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Di 2011-08-23 21:44
+" Last update: Do 2011-09-15 19:01
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "  
@@ -38,8 +38,8 @@ if has("multi_byte")
 endif
 " ~/local/share/vim/vim73 should contains the newest runtime files
 " Always have ~/.vim at first position.
-set rtp-=~/.vim
-set rtp^=/home/chrisbra/local/share/vim/vim73/
+"set rtp-=~/.vim
+"set rtp^=/home/chrisbra/local/share/vim/vim73/
 set rtp^=~/.vim
 " allow switching of buffers without having to save them
 set hidden
@@ -51,10 +51,14 @@ set nojoinspaces
 set cpo+=$
 
 " Turn on filetype detection plugin and indent for specific 
-filetype plugin indent on
+if exists(":filetype") == 2
+    filetype plugin indent on
+endif
 
 " Always turn syntax highlighting on
-syntax on
+if has("syntax")
+    syntax on
+endif
 
 " Tweak timeouts, because the default is too conservative
 " This setting is taken from :h 'ttimeoutlen'
@@ -132,8 +136,10 @@ set dictionary=/usr/share/dict/words
 
 "au FileType mail   so ~/.vim/mail.vim
 "au FileType tex    so ~/.vim/latex.vim
-au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
-au BufNewFile,BufRead *.csv setf csv
+if has("autocmd")
+    au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
+    au BufNewFile,BufRead *.csv setf csv
+endif
 
 "-------------------------------------------------------
 " STATUSBAR
@@ -177,10 +183,12 @@ endif
 "let potwiki_dir = "$HOME/Wiki/"
 
 
-" Matching of IP-Addresses Highlight in yellow
-highlight ipaddr term=bold ctermfg=yellow guifg=yellow
-" highlight ipaddr ctermbg=green guibg=green
-match ipaddr /\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)/ 
+if has("syntax")
+    " Matching of IP-Addresses Highlight in yellow
+    highlight ipaddr term=bold ctermfg=yellow guifg=yellow
+    " highlight ipaddr ctermbg=green guibg=green
+    match ipaddr /\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)/ 
+endif
 
 
 "---------------------------------------------
@@ -274,11 +282,11 @@ if version >= 600
 endif
 
 if (&term =~ '^screen')
-  if expand("$COLORTERM") !~ 'rxvt'
+  "if expand("$COLORTERM") !~ 'rxvt'
     set t_Co=256
-  else
-    set t_Co=88
-  endif
+  "else
+  "  set t_Co=88
+  "endif
   " set title for screen
   " VimTip #1126
   " set t_ts=k t_fs=\\ title
@@ -305,8 +313,8 @@ endif
 " desert and darkblue
 if (&t_Co == 256) || (&t_Co == 88)
     if exists("$COLORTERM") && expand("$COLORTERM") =~ "rxvt"
-	set t_Co=88
-	colors black_angus
+	"set t_Co=88
+	colorscheme elflord
     else
 	colorscheme desert256
     "colorscheme desert
@@ -360,7 +368,7 @@ if has('cscope')
 
   
     let $VIMSRC='/home/chrisbra/code/vim'
-    command -nargs=0 Cscope cs add $VIMSRC/src/cscope.out $VIMSRC/src
+    command! -nargs=0 Cscope cs add $VIMSRC/src/cscope.out $VIMSRC/src
 endif
 
 if has('persistent_undo')
