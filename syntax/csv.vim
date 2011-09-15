@@ -78,7 +78,7 @@ fu! <sid>DoHighlight() "{{{3
 	"exe "syn match CSVDelimiter /" . s:col . '\%(.\)\@<=/ms=e,me=e contained'
 	exe "syn match CSVDelimiter /" . s:col . '\n\=/ms=e,me=e contained'
 	"exe "syn match CSVDelimiterEOL /" . s:del . '\?$/ contained'
-	if has("conceal")
+	if has("conceal1")
 	    hi def link CSVDelimiter Conceal
 	    hi def link CSVDelimiterEOL Conceal
 	else
