@@ -1,0 +1,232 @@
+*valgrind*
+*memcheck*
+
+			DEBUGGING VIM WITH VALGRIND ~
+
+Last Change: 28 July, 2010
+Author: Dominique Pelle (dominique DOT pelle AT gmail DOT com)
+
+==============================================================================
+1. Introduction						|valgrind-intro|
+2. Running Vim with Valgrind				|valgrind-run|
+3. Tips							|valgrind-tips|
+4. Known issues and limitations				|valgrind-issues|
+
+==============================================================================
+1. Introduction					 	      *valgrind-intro*
+
+Valgrind is a set of debugging and profiling tools available under the GNU
+General Public License, version 2. Valgrind can be useful for testing and
+debugging Vim. The Memcheck tool of Valgrind is the most useful tool.
+Memcheck can help find the following kinds of bugs:
+
+- use of uninitialized memory
+- invalid read or write
+- illegal free
+- double free
+- memory leaks
+- illegal overlapping source and destination in C function such as memcpy(),
+  strcpy().
+
+When Memcheck detects a bug, it outputs on stderr the stack where bug was
+detected. For example, the following bug was detected with Memcheck and fixed
+in Vim-7.2.157: >
+
+  ==15886== Invalid read of size 1
+  ==15886==    at 0x81796E9: find_pattern_in_path (search.c:5117)
+  ==15886==    by 0x8069229: ins_compl_get_exp (edit.c:4015)
+  ==15886==    by 0x8069F0A: ins_compl_next (edit.c:4434)
+  ==15886==    by 0x806B19C: ins_complete (edit.c:5066)
+  ==15886==    by 0x8064FDA: edit (edit.c:1343)
+  ==15886==    by 0x812F640: invoke_edit (normal.c:8888)
+  ==15886==    by 0x812F5E6: nv_edit (normal.c:8861)
+  ==15886==    by 0x8122E06: normal_cmd (normal.c:1189)
+  ==15886==    by 0x80E62C1: main_loop (main.c:1180)
+  ==15886==    by 0x80E5E0E: main (main.c:939)
+  ==15886==  Address 0x61d1ad8 is 0 bytes after a block of size 4,096 alloc'd
+  ==15886==    at 0x402603E: malloc (vg_replace_malloc.c:207)
+  ==15886==    by 0x811366E: lalloc (misc2.c:866)
+  ==15886==    by 0x811358A: alloc (misc2.c:765)
+  ==15886==    by 0x80F351C: mf_alloc_bhdr (memfile.c:973)
+  ==15886==    by 0x80F2B3C: mf_new (memfile.c:395)
+  ==15886==    by 0x80F897D: ml_new_data (memline.c:3164)
+  ==15886==    by 0x80F3FBB: ml_open (memline.c:373)
+  ==15886==    by 0x8052C60: open_buffer (buffer.c:85)
+  ==15886==    by 0x8097AD3: do_ecmd (ex_cmds.c:3655)
+  ==15886==    by 0x80ADE5F: do_exedit (ex_docmd.c:7569)
+  ==15886==    by 0x80ADAB7: ex_open (ex_docmd.c:7454)
+  ==15886==    by 0x80A6527: do_one_cmd (ex_docmd.c:2622)
+  ==15886==    by 0x80A3DA7: do_cmdline (ex_docmd.c:1096)
+  ==15886==    by 0x80A32BA: do_exmode (ex_docmd.c:653)
+  ==15886==    by 0x81296C8: nv_exmode (normal.c:5176)
+  ==15886==    by 0x8122E06: normal_cmd (normal.c:1189)
+  ==15886==    by 0x80E62C1: main_loop (main.c:1180)
+  ==15886==    by 0x80E5E0E: main (main.c:939)
+
+Memcheck can help find and fix bugs in Vim. It can find bugs which may
+cause no apparent misbehavior in some cases, but which could very well cause a
+misbehavior on some rare occasions or on some other platforms. So it is
+important to fix all issues detected with Memcheck.
+
+Valgrind is not a static analyzer, it detects problems when running the code
+and the number of false positives is very low.
+
+For more information about Valgrind see: http://www.valgrind.org/.
+
+==============================================================================
+2. Running Vim with Valgrind					*valgrind-run*
+
+2.1 Prerequisites ~
+
+Before running Vim with Valgrind, the following steps are required:
+- install Valgrind
+- build the latest development version of Vim with debug option (-g) and
+  without optimization (-O0): >
+
+	$ hg clone https://vim.googlecode.com/hg/ vim
+	$ cd vim
+	$ ./configure --with-features=huge
+	(in src/Makefile, search for CFLAGS and define it as: CFLAGS = -g -O0)
+	$ make
+
+Running Vim with Valgrind ~
+
+Run Vim with Valgrind from the shell with: >
+
+	$ cd vim7/src
+	$ valgrind ./vim --log-file=valgrind.log
+
+Make sure that you don't run the Vim executable installed with "make install"
+as "make install" strips symbols.
+
+To test the GUI version of Vim, use the -f -g options to avoid forking
+a separate process: >
+
+	$ valgrind ./vim -f -g log-file=valgrind.log
+
+Vim execution is significantly slower when run with Valgrind. Any error
+detected by Valgrind is sent to stderr (redirected to the log file valgrind.log
+in above example).
+
+It is useful to open a second terminal while running Vim to check for errors
+in log file valgrind.log as soon as they happen using: >
+
+	$ tail -f valgrind.log
+
+Additional useful options of Valgrind ~
+
+Valgrind has several useful command line options. This section is not meant to
+describe all of them, but instead give the most useful options when debugging
+Vim. See Valgrind documentation for more details.
+
+--leak-check=yes
+	When enabled, Valgrind shows the location of all detected memory
+	leaks.
+
+--leak-resolution=high
+        When doing leak checking, determines how willing memcheck is to
+        consider different backtraces to be the same.`
+
+--track-fds=yes
+	When enabled, Valgrind prints the list of open file descriptors when
+	exiting. It is useful to find file descriptor leaks.
+
+--num-callers={number} (default 12)
+	This option can help in determining the program's location when the
+	depth of the stack is deep.
+
+--track-origins=yes
+	Controls whether Memcheck tracks the origin of uninitialized values.
+	Enabling it has a performance overhead but Valgrind can give more
+	information when Valgrind reports access to uninitialized values.
+
+In order to avoid typing these options all the time, it can be useful to
+define a shell alias: >
+
+	alias vg='valgrind --num-callers=50 \
+			   --leak-check=yes \
+			   --leak-resolution=high \
+			   --track-fds=yes --log-file=valgrind.log'
+
+And Vim can then be run with Valgrind using: >
+
+	$ cd vim7/src ; vg ./vim
+
+Useful compilation options of Vim ~
+
+When built with -DEXITFREE, Vim should normally free all memory blocks
+before exiting. Freeing all memory before exiting is normally not required
+and Vim is therefore typically not built with -DEXITFREE. However, when
+searching for memory leaks, -DEXITFREE can be useful so that Valgrind does not
+show spurious memory leaks. Compilation option -DEXITFREE is enabled by
+uncommenting the following line in src/Makefile: >
+
+	PROFILE_CFLAGS = -DEXITFREE
+
+Compiling Vim with -DMEM_PROFILE is also useful. In vim7/src/Makefile, add
+-DMEM_PROFILE to CFLAGS: >
+
+	CFLAGS = -g -O0 -DMEM_PROFILE
+
+Compiling with -DMEM_PROFILE allows finding memory allocation/free mismatches:
+
+- memory allocated with alloc(), lalloc (etc) should normally be freed with
+  vim_free() and not with standard C function free()
+- memory allocated with standard C functions such as malloc(), strcpy() should
+  be freed with the standard C function free() and not with vim_free()
+
+Such mismatches normally do not cause any bug since vim_free() is mostly a
+wrapper around free(), except when defining -DMEM_PROFILE.
+
+==============================================================================
+3. Tips							       *valgrind-tips*
+
+Valgrind can only find bugs if the offending code is being executed. So to
+find bugs in Vim using Valgrind, it is important to execute as many paths in
+Vim's code as possible. Valgrind has already been used extensively to debug
+Vim so you are unlikely to find bugs in the latest version of Vim using only
+basic Vim commands. However, since Vim has many features, many options,
+support several GUIs and runs on several platforms, exhaustive testing is not
+possible in practise. So one might still be able to find new bugs in Vim when
+using Valgrind. To increase the chance of detecting bugs:
+
+- try running as many different Vim commands as possible
+- check the help pages for all possible arguments of commands and try all of
+  them
+- try running Vim with different settings. You can for example try using
+  several ~/.vimrc files available on the Internet
+- try several scripts from http://www.vim.org/scripts.
+- try running the Vim's test suite with Valgrind
+- try compiling Vim with different configurations
+- try Vim in a terminal and gvim built with different GUIs
+- if someone reports a bug in Vim, try to reproduce it with Valgrind
+- be creative and try odd things!
+
+Always make sure to test with the latest development version of Vim to ensure
+that you don't waste time debugging problems already fixed.
+
+If you can reproduce a bug with Valgrind, try to come up with the simplest
+reproducible test case (preferably using 'vim -u NONE') and submit a patch if
+you can to the vim_dev mailing list (http://groups.google.com/group/vim_dev).
+If you are unable to fix it, you can still submit a bug report with the
+detailed steps to reproduce it. Automated ways to reproduce the bug are
+preferable if possible. See |bugs| for guidelines on bug reporting.
+
+==============================================================================
+4. Known issues and limitations				      *valgrind-issues*
+
+- Valgrind is only available for Linux, with some experimental ports for
+  *BSD and Darwin.  See http://www.valgrind.org/info/platforms.html.
+- Suspending Vim with CTRL-Z does not work when running with Valgrind. It might
+  be a limitation of Valgrind when a process sends a signal to itself (not
+  sure).
+- Vim built with mzscheme crashes when run with Valgrind (not investigated
+  yet).
+- Valgrind gives errors in PyObject_Free() when running Python commands. This
+  is a known caveat. These errors can be silenced by configuring and compiling
+  Python lib with ./configure --without-pymalloc. Further information can be
+  found at:
+    http://svn.python.org/view/python/trunk/Misc/README.valgrind?view=markup
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

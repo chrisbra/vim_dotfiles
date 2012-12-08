@@ -1,7 +1,7 @@
 *unicode.txt* A completion plugin for Unicode glyphs
 
 Author:  Christian Brabandt <cb@256bit.org>
-Version: 0.9 Wed, 20 Jul 2011 22:17:26 +0200
+Version: 0.14 Sat, 01 Dec 2012 21:24:18 +0100
 Copyright: (c) 2009, 2010 by Christian Brabandt 	    *unicode-copyright*
            The VIM LICENSE applies to unicode.vim and unicode.txt
            (see |copyright|) except use unicode instead of "Vim".
@@ -43,7 +43,7 @@ If you want to disable the plugin, enter >
 
     :DisableUnicodeCompletion
 <
-	 						 *:UnicodeName*
+							    *:UnicodeName*
 Suppose, you want to know, what the Unicode Name for the Character under the
 cursor is. You simply enter the ex command: >
 
@@ -51,6 +51,27 @@ cursor is. You simply enter the ex command: >
 
 The plugin will then output the character, the character's hexadecimal value
 and the official Unicode name.
+
+Additionally, if there exists a digraph for that character, it will also be
+shown in paranthesis.
+								    *:Digraphs*
+>
+    :Digraphs
+
+Outputs the digraph list in an easier way to read with coloring of the digraphs.
+
+If you want to display a list with a line break after each digraph, use the
+bang attribute >
+    
+    :Digraphs! 
+
+And if you want to display all digraphs matching a certain value, you can add
+an argument to the command: >
+
+    :Digraphs! A
+
+displays all digraphs, that match 'A' (e.g. all that can be created with the
+letter A or whose digraph matches the letter 'A'.
 
 ==============================================================================
 						    *unicode-plugin-usage*
@@ -111,6 +132,14 @@ variable g:enableUnicodeCompletion to 1 in your |.vimrc| like this: >
 Thus, you won't need to use EnableUnicodeCompletion, it will be already
 available.
 
+If you only want to complete the Unicode Names instead of the glyphs,
+you can either set the global variable >
+
+    let g:unicode_complete_name = 1
+<
+or you can use the mapping <leader>un which swaps the completion function
+between completing the unicode name and completing the unicode glyph.
+
 						     *unicode-plugin-error*
 If the plugin gives an error or does not complete anything, first check, that
 UnicodeData.txt from the Unicode Consortium has been successfully downloaded.
@@ -145,6 +174,8 @@ CTRL-X CTRL-G		Search for the character in front of the cursor and
 			try to complete this letter using a digraph. If there
 			is no letter in front of the cursor, a list with all
 			available digraphs is shown in a popup menu.
+			If both letters in front of the cursor form a digraph,
+			that digraph will be completed.
 			(Think of Glyph)
        CTRL-N           Use next match. This match replaces the previous
 			match.
@@ -154,6 +185,17 @@ CTRL-X CTRL-G		Search for the character in front of the cursor and
 
 ==============================================================================
 4. unicode History			              *unicode-plugin-history*
+    0.14: Dec 01, 2012  - |:Digraphs| for better display of digraphs
+    0.13: Sep 08, 2012  - better output for |UnicodeName| (did previously hide
+			  messages)
+    0.12: Apr 12, 2012  - |UnicodeName| shows digraph, if it exists
+			- better completion of digraphs
+    0.11: Apr 11, 2012  - prevent loading of autoload file too early
+			- Make matching digraph more error-prone
+			- show all matching digraphs for a char
+    0.10: Dec 15, 2011  - enable completing of only the names
+			- Really disable the 'completefunc' when disabling
+			  the function
     0.9: Jul 20, 2011:  - |:UnicodeName| checks for existence of
 			  UnicodeData.txt
 			- |:UnicodeName| now also detects combined chars

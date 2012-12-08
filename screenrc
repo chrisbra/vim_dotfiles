@@ -1,0 +1,164 @@
+#
+# Einstellungen
+#
+
+# bei Verbindungsabbruch Sitzung automatisch vom
+# Terminal entkoppeln - bleibt also bestehen
+autodetach on
+
+# Flußkontrolle (^s / ^q) aktiv
+defflow off
+
+# Screensaver Session
+# nach 3 Minuten Inaktivität starten wir einen Matrix-ähnlichen 
+# Screensaver
+#blankerprg /usr/bin/cmatrix -Bfs
+#idle 180  blanker
+
+# Disable Blanker
+#blankerprg
+
+
+# login-Shell starten
+deflogin on
+
+# Zeilenpuffer
+defscrollback 1000
+
+# wenn der Bildschirm in eine Datei geschrieben wird,
+# jedesmal an diese Datei anhängen (nicht überschreiben)
+hardcopy_append on
+
+# Screen Statusleiste anzeigen
+hardstatus alwayslastline "%{=b dG} %d.%m.%y | %c:%s |  %-w%{=b W}%n %t%{-}%+w "
+#hardstatus alwayslastline "%{=b dG} %d.%m.%y | %c:%s |  %-w%{=b W}%n %t%{-}%+w "
+#hardstatus alwayslastline "%{RY}%16=%H %33=%{YR}%50=%M%d %66=%{Gb}%80=%c%="
+
+# caption kann wie hardstatus eine Statusleiste anzeigen (per default
+# nur im Split modus
+# Bsp:
+#caption always "%{+b rk}%H%{gk} |%c %{yk}%d.%m.%Y | %{rw}%n%f %t %{bk} | %?%-Lw%?%{bw}%n*%f %t%?(%u)%?%{wk}%?%+Lw%? | %{rk} Load: %l %{wk}"
+
+# Information, welcher Song gerade spielt
+backtick 1 10 10 ~/bin/cmus-now-playing.sh
+# etwas mehr info für zsh
+caption always "%3n %t%? (%u)%?%?: %h%? %=%{+b k}%10`"
+
+# sorendition setzt die Farben für Messages und Markierungen
+# Anwedung: sorendition [attribute modifier] Vordergrund Hintergrund
+# Attribute: 
+# u underline
+# b bold
+# B blinking
+# d dim
+# r reverse
+# s standout
+sorendition +b Bk # green on black
+
+# Fehlermeldungen in "nethack"-Manier ausgeben
+nethack on
+
+# keine Begrüßungsnachricht anzeigen
+startup_message off
+
+# "sichtbare Klingel", also das Blinken des Bildschirms
+# bei einem Fehler ist deaktiviert
+# vbell on
+
+
+#
+# Nachrichten
+#
+
+# Mitteilung, daß auf einem virtuellen Schirm
+# Aktivität beobachtet wurde (z.B. Bildschirmausgaben)
+activity	"activity in %n (%t) [%w:%s]~" # NOTE: beep included!
+
+# Mitteilung, wenn Power-Detach ausgeführt wird
+pow_detach_msg	"BYE"
+
+# Nachricht, die statt dem Fehlerpieps angezeigt wird
+vbell_msg	" *beep* "
+
+# 
+# Tastenbelegungen
+#
+
+bind . activity	"activity in %n (%t) [%w:%s]~"
+bind * activity	"activity in %n (%t) [%w:%s]"
+
+# verschiede Programme sind auf bestimmten virt. Konsolen festgelegt
+bind v screen -t 'vim' vim
+bind b screen -t 'w3m' w3m 
+bind C screen -t 'cmus' cmus 
+#bind m screen -t 'mutt' mutt
+#bind m screen -t '% |mutt' mutt
+bind w screen -t 'wyrd' wyrd
+bind ü clear
+# verhindert dass killen der bash
+# gleicher bug kann auch behoben werden durch: 
+# termcapinfo xterm* hs@
+# hardstatus alwaysignore
+
+# nun definieren wir uns noch ein paar neue Tasten
+# z.B. F7 prev. Window
+# F8 next Window
+
+#bindkey -k k7 prev
+#bindkey -k k8 next
+# Prev/Next Windows with Alt-Left Alt-Right respectively
+bindkey ^[^[[D prev
+bindkey ^[^[[C next
+
+# When starting, automatically start these programs
+
+screen -t htop 8 nice htop
+#screen -t syslog 9 tail -f /var/log/syslog 
+#screen -t mutt 0 mutt
+screen -t zsh 0 zsh
+screen -t zsh 1 zsh
+screen -t cmus 2 start-cmus.sh zsh
+#screen -t wyrd 2 wyrd
+
+#defencoding ISO8859-15
+#encoding ISO8859-15
+
+# TEST
+# Das folgende sollte <Shift>+<PgUp>/<PgDown> wieder einstellen
+# zunächst: mein Terminal kann nicht scrollen:
+termcapinfo xterm ti@:te@
+termcapinfo rxvt ti@:te@
+termcapinfo putty ti@:te@
+# bind Shift+PgUp/PgDown
+bindkey -m "^[[5;2~" stuff ^b
+bindkey -m "^[[6;2~" stuff ^f
+
+# Support Altscreen: this redraws a screen, e.g. when you exit vi and
+# it will loke like the screen was before vi was started
+altscreen on
+
+# Do not close a terminal, even if the running process terminated
+# The advantage, we can restart the terminated process
+# To terminate the session press z    
+# To restart the process press ctrl-Space
+zombie z
+
+# terminfo and termcap for nice 256 color terminal
+# allow bold colors - necessary for some reason
+attrcolor b ".I"
+# tell screen how to set colors. AB = background, AF=foreground
+termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+termcapinfo urxvt 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+# erase background with current bg color
+defbce on
+# Setting for 256 colors
+# attrcolor b ".I"
+# termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+# defbce on
+
+# tell screen to advertise as 256color capable
+# you need to have the latest ncurses-libraries installed
+# in order to find the right TERMINFO capabilities
+# (package ncurses-term should have it)
+# term screen-256color-bce
+bindkey -k F2 detach

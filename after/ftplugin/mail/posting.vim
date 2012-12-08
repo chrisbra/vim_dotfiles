@@ -198,7 +198,7 @@ call cursor(1,1)
 call search("^$")
 
 
-command! -nargs=1 -complete=file AttachList :call Attach("<args>")
-command! -nargs=1 -complete=file AttachFile exe "normal magg}-" | call append(line('.'), 'Attach: <args>') | normal `a
+"command! -nargs=1 -complete=file AttachList :call Attach("<args>")
+"command! -nargs=1 -complete=file AttachFile exe "normal magg}-" | call append(line('.'), 'Attach: <args>') | normal `a
 
 " vi:foldmethod=marker:foldenable:foldlevel=0:

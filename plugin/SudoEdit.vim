@@ -1,13 +1,11 @@
 " SudoEdit.vim - Use sudo/su for writing/reading files with Vim
 " ---------------------------------------------------------------
-" Version:  0.8
+" Version:  0.17
 " Authors:  Christian Brabandt <cb@256bit.org>
-" Last Change: Tue, 20 Apr 2010 00:04:14 +0200
-
-
+" Last Change: Mon, 20 Aug 2012 19:30:22 +0200
 " Script:  http://www.vim.org/scripts/script.php?script_id=2709 
 " License: VIM License
-" GetLatestVimScripts: 2709 7 :AutoInstall: SudoEdit.vim
+" GetLatestVimScripts: 2709 17 :AutoInstall: SudoEdit.vim
 " Documentation: see :h SudoEdit.txt
 
 " ---------------------------------------------------------------------
@@ -25,10 +23,49 @@ if v:version < 700 || ( v:version == 700 && !has("patch111"))
 endif
 
 " ---------------------------------------------------------------------
+" Functions {{{1
+func! <sid>ExpandFiles(A, L, P) "{{{
+  if a:A =~ '^s\%[udo:]$'
+    return [ "sudo:" ]
+  endif
+  let pat = matchstr(a:A, '^\(s\%[udo:]\)\?\zs.*')
+  let gpat = (pat[0] =~ '[./]' ? pat : '/'.pat). '*'
+  if !empty(pat)
+    " Patch 7.3.465 introduced the list parameter to glob()
+    if v:version > 703 || (v:version == 703 && has('patch465'))
+      let res = glob(gpat, 1, 1)
+    else
+      let res = split(glob(gpat, 1),"\n")
+    endif
+    call filter(res, '!empty(v:val)')
+    call filter(res, 'v:val =~ pat')
+    call map(res, 'isdirectory(v:val) ? v:val.''/'':v:val')
+    if a:A =~ '^s\%[udo:]'
+      call map(res, '''sudo:''.v:val')
+    endif
+    return res
+  else
+    return ''
+  endif
+endfu
+
+" ---------------------------------------------------------------------
 " Public Interface {{{1
 " Define User-Commands and Autocommand "{{{
-com! -complete=file -range=% -nargs=? SudoWrite :<line1>,<line2>call SudoEdit#SudoDo(0, <q-args>)
-com! -complete=file -nargs=? SudoRead  :call SudoEdit#SudoDo(1, <q-args>)
+"
+" Dirty hack, to make winsaveview work, ugly but works.
+" because functions with range argument reset the cursor position!
+com! -complete=customlist,<sid>ExpandFiles -bang -range=% -nargs=? SudoWrite
+      \ :let s:a=winsaveview()|
+      \ :<line1>,<line2>call SudoEdit#SudoDo(0, <q-bang>, <q-args>)|
+      \ call winrestview(s:a)
+com! -complete=customlist,<sid>ExpandFiles -bang -nargs=? SudoRead
+      \ :let s:a=winsaveview()|
+      \ :call SudoEdit#SudoDo(1, <q-bang>, <q-args>) |
+      \ call winrestview(s:a)
+" This would be nicer, but look at the function, it isn't really prettier!
+"com! -complete=file -range=% -nargs=? SudoWrite
+"      \ :call SudoEdit#SudoWritePrepare(<q-args>, <line1>,<line2>)
 
 augroup Sudo
 	autocmd!

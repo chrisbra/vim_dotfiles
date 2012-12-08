@@ -1,0 +1,132 @@
+*ft_improved.txt* - Better f/t command for Vim
+
+Author:  Christian Brabandt <cb@256bit.org>
+Version: 0.4 Sun, 09 Sep 2012 14:13:31 +0200
+
+Copyright: (c) 2009, 2010, 2011, 2012 by Christian Brabandt
+           The VIM LICENSE applies to improved_ft.vim and improved_ft.txt
+           (see |copyright|) except use improved_ft instead of "Vim".
+           NO WARRANTY, EXPRESS OR IMPLIED.  USE AT-YOUR-OWN-RISK.
+
+
+==============================================================================
+1. Contents                                                  *improvedft-ft*
+
+        1.  Contents...................................: |improvedft-ft|
+        2.  Manual.....................................: |improvedft-manual|
+        2.1   Enable...................................: |improvedft-Enable|
+        2.2   Disable..................................: |improvedft-Disable|
+        2.3   Tips.....................................: |improvedft-Tips|
+        2.4   Bugs.....................................: |improvedft-Bugs|
+        3.  Feedback...................................: |improvedft-feedback|
+        4.  History....................................: |improvedft-history|
+
+==============================================================================
+2. Improved ft command Manual                              *improvedft-manual*
+
+Functionality
+
+This plugin tries to improve the existing behaviour of the |f|, |F|, |t| and
+|T| command by letting them move the cursor not only inside the current line,
+but move to whatever line, where the character is found. Also the |,| and |;|
+command should just work as expected.
+
+It does consider counts given and should work simply as a user would be
+expecting.
+
+It basically does that, by remapping the f,F,t and T command to issue a search
+for the character that is entered and moving the cursor there.
+
+
+2.1 Enable                                               *improvedft-Enable*
+----------
+
+By default the new f,F,t,T commands should simply work. If you have disabled
+the plugin (see |improvedft-Disable|), use the command >
+    :EnableImprovedFT
+<
+
+2.2 Disable                                             *improvedft-Disable*
+-----------
+
+If for any reason, you want to disable the plugin, use >
+    :DisableImprovedFT
+<
+
+2.3 Tips                                             *improvedft-Tips*
+--------
+
+YankRing and the improved ft plugin
+-----------------------------------
+
+Both plugins map the ',', ';', 'f', 'F', 't' and 'T' key, so they don't work
+together very well. The improved ft plugin tries to work around that by
+setting a YankRing option that prevents mapping those keys and reloading the
+YankRing plugin.
+
+The following YankRing variables are set by the improved ft plugin: >
+
+        let g:yankring_zap_keys = "/ ?"
+        let g:yankring_o_keys  = 'b B w W e E d h j k l H M L y G ^ 0 $'
+        let g:yankring_o_keys .= ' g_  g^ gm g$ gk gj gg ge gE - + _ '
+        let g:yankring_o_keys .= ' iw iW aw aW as is ap ip a] a[ i] i['
+        let g:yankring_o_keys .= ' a) a( ab i) i( ib a> a< i> i< at it'
+        let g:yankring_o_keys .= ' a} a{ aB i} i{ iB a" a'' a` i" i'' i`'
+<
+
+If those variables have been customized in your .vimrc, the plugin detects it
+and removes the ',', ';', 'f', 'F', 't' and 'T' from them.
+
+The drawback of doing this is, that the YankRing possibly doesn't immediately
+catch up in the YankRing itself and possibly will not be caught at all.
+
+
+2.4 Bugs                                             *improvedft-Bugs*
+--------
+
+- The plugin sets the search register (so 'hls' triggers incorrectly)
+  (probably needs a rewrite without using expression-mappings)
+
+- When using T as operator and the match is the last character of a previous
+  line, the motion will become inclusive and you will incorrectly also change
+  that character. (also when ',' or ';' are searching backwards) That seems to
+  be a bug within Vim. See also |exclusive|
+
+==============================================================================
+3. Feedback                                         *improvedft-feedback*
+
+Feedback is always welcome. If you like the plugin, please rate it at the
+vim-page:
+http://www.vim.org/scripts/script.php?script_id=3877
+
+You can also follow the development of the plugin at github:
+http://github.com/chrisbra/improvedft
+
+Please don't hesitate to report any bugs to the maintainer, mentioned in the
+third line of this document.
+
+==============================================================================
+4. History                                              *improvedft-history*
+
+0.4: Sep 09, 2012 "{{{1
+- special handling of pattern / and ?
+
+0.3: Aug 20, 2012 "{{{1
+- fix issue https://github.com/chrisbra/improvedft/issues/1
+  by disallowing the Yankring to map the keys f F t and T
+- Better mapping of ';' key (patch by Marcin Szamotulski, thanks!)
+
+0.2: Jan 13, 2012 {{{1
+- disable debug mode
+- enable |GLVS|
+
+0.1: Jan 12, 2012 {{{1
+
+- Initial upload
+- development versions are available at the github repository
+- put plugin on a public repository (http://github.com/chrisbra/improvedft)
+  }}}
+
+==============================================================================
+Modeline:
+vim:tw=78:ts=8:ft=help:et:fdm=marker:fdl=0:norl

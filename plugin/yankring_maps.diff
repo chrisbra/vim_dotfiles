@@ -1,0 +1,97 @@
+--- yankring.vim.orig	2012-08-13 23:41:36.019227902 +0200
++++ yankring.vim.new	2012-08-13 23:41:13.999118720 +0200
+@@ -30,6 +30,11 @@
+     let s:yr_has_voperator = 1
+ endif
+ 
++let s:yr_has_maparg        = 0
++if v:version > 703 || ( v:version == 703 && has("patch032") )
++    let s:yr_has_maparg    = 1
++endif
++
+ if !exists('g:yankring_history_dir')
+     let g:yankring_history_dir = expand('$HOME')
+ else
+@@ -1521,7 +1526,7 @@
+ 
+ 
+ " Handle any omaps
+-function! YRMapsExpression(sid, motion, ...)
++function! YRMapsExpression(sid, motion, mode, ...)
+     let cmds     = a:motion
+     " echomsg "YRMapsE:".localtime()
+     " echomsg "YRMapsE 1:".cmds.":".v:operator.":".s:yr_maps_created_zap
+@@ -1544,6 +1549,15 @@
+             else
+                 let zapto = "\<C-C>"
+             endif
++        elseif has_key(s:yr_orig_maps, a:mode) &&
++            \  has_key(s:yr_orig_maps[a:mode], a:motion) &&
++            \  !empty(s:yr_orig_maps[a:mode][a:motion])
++            if s:yr_orig_maps[a:mode][a:motion].expr
++                let zapto = eval(s:yr_orig_maps[a:mode][a:motion].rhs)
++            else
++                let zapto = s:yr_orig_maps[a:mode][a:motion].rhs
++            endif
++            let cmds = ''
+         else
+             let zapto = (a:0==0 ? "" : s:YRGetChar())
+         endif
+@@ -1633,6 +1647,27 @@
+     call s:YRMapsCreate('add_only_zap_keys')
+ endfunction
+ 
++" before remapping key in mode, capture original maps,
++" so we can call those later in YRMapsExpression
++function! s:YROrigMap(key, mode)
++    if !exists("s:yr_orig_maps")
++        let s:yr_orig_maps = {}
++    endif
++
++    if !s:yr_has_maparg
++        " only works with Vim >= 7.3.032
++        return
++    endif
++
++    if !has_key(s:yr_orig_maps, a:mode)
++        let s:yr_orig_maps[a:mode] = {}
++    endif
++    let map_orig = maparg(a:key, a:mode, '', 1)
++    " prevent recursive call
++    if !empty(map_orig) && map_orig.rhs !~ '^YRMapsExpression'
++        let s:yr_orig_maps[a:mode][a:key] = maparg(a:key, a:mode, '', 1)
++    endif
++endfunction
+ 
+ " Create the default maps
+ function! s:YRMapsCreate(...)
+@@ -1643,7 +1678,8 @@
+         for key in split(g:yankring_zap_keys)
+             try
+                 if key != '@'
+-                    exec 'omap <expr>' key 'YRMapsExpression("<SID>", "'. key. '", 1)'
++                    call s:YROrigMap(key, 'o')
++                    exec 'omap <expr>' key 'YRMapsExpression("<SID>", "'. key. '", "o", 1)'
+                 endif
+             catch
+             endtry
+@@ -1670,7 +1706,8 @@
+         let o_maps = split(g:yankring_o_keys)
+         " Loop through and prompt the user for all buffer connection parameters.
+         for key in o_maps
+-            exec 'omap <expr>' key 'YRMapsExpression("<SID>", "'. escape(key,'\"'). '")'
++            call s:YROrigMap(key, 'o')
++            exec 'omap <expr>' key 'YRMapsExpression("<SID>", "'. escape(key,'\"'). '", "o")'
+         endfor
+     endif
+ 
+@@ -1687,7 +1724,8 @@
+ 
+     if g:yankring_map_dot == 1
+         if s:yr_has_voperator == 1
+-            nmap <expr> . YRMapsExpression("<SID>", ".")
++            call s:YROrigMap('.', 'n')
++            nmap <expr> . YRMapsExpression("<SID>", ".", "n")
+         else
+             nnoremap <silent> . :<C-U>YRYankCount '.'<CR>
+         endif

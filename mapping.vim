@@ -2,7 +2,7 @@
 " Vim Setting for Mappings
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Mo 2011-04-11 19:57
+" Last update: Do 2012-01-26 19:16
 
 "-------------------------------------------------------
 " Useful mappings

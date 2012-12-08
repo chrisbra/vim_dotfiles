@@ -2,7 +2,7 @@
 " Global .vimrc Settings from 
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Do 2011-09-15 19:01
+" Last update: Mo 2012-12-03 23:24
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "  
@@ -35,6 +35,11 @@ if has("multi_byte")
         set fileencodings=ucs-bom,utf-8,latin9
         " optional: defaults for new files
         "setglobal bomb fileencoding=utf-8
+endif
+if 0
+    " Use pathogen as plugin manager
+    call pathogen#infect()
+    call pathogen#helptags()
 endif
 " ~/local/share/vim/vim73 should contains the newest runtime files
 " Always have ~/.vim at first position.
@@ -71,15 +76,14 @@ set ai ruler showmode showmatch wildmenu showcmd ls=2
 
 " Search options: ignore case, increment search, no highlight, smart case
 " nostartofline option
-set ic incsearch hlsearch smartcase nostartofline
+set ic incsearch nohlsearch smartcase nostartofline
 
 " show partial lines
 set display+=lastline
 
-
 "whichwrap those keys move the cursor to the next line if at the end of the
 "line
-set ww=<,>,h,l
+set ww=<,>
 
 " when using :scrollbind, also bind scrolling horizontally
 set scrollopt+=hor
@@ -190,14 +194,12 @@ if has("syntax")
     match ipaddr /\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)/ 
 endif
 
-
 "---------------------------------------------
 " This will highlight the line on which 
 " a search pattern matches.
 "---------------------------------------------
 "au CursorHold * if getline('.') =~ @/ | exe 'match LineNr /\%' .  line(".") . 'l.*/' | else | match | endif
 "set updatetime=20
-
 "---------------------------------------------
 " Vim 7 Features
 "---------------------------------------------
@@ -271,7 +273,6 @@ else
     let loaded_VCSCommand = 1
 endif
 
-
 if version >= 600
 " Folding:
 " This works only with vim > 6
@@ -298,30 +299,32 @@ if (&term =~ '^screen')
   " set information for title in screen (see :h 'statusline')
   set titlestring=%t%=%<%(\ %{&encoding},[%{&modified?'+':'-'}],%p%%%)
   com! -complete=help -nargs=+ H :!screen -t 'Vim-help' vim -c 'help <args>' -c 'only'
-elseif (&term =~ 'putty\|xterm-256\|xterm-color')
+elseif (&term =~ 'putty\|xterm-256\|xterm-color\|xterm')
     " Let's have 256 Colors. That rocks!
     " Putty and screen are aware of 256 Colors on recent systems
     set t_Co=256 title
     "let &titleold = fnamemodify(&shell, ":t")
     "set t_AB=^[[48;5;%dm
     "set t_AF=^[[38;5;%dm
-elseif ($TERM == 'xterm' && $COLORTERM == 'gnome-terminal')
-    set t_Co=256 title term=xterm-256color
 endif
 
 " Set a color scheme. I especially like 
 " desert and darkblue
 if (&t_Co == 256) || (&t_Co == 88)
-    if exists("$COLORTERM") && expand("$COLORTERM") =~ "rxvt"
+    "if exists("$COLORTERM") && expand("$COLORTERM") =~ "rxvt"
 	"set t_Co=88
-	colorscheme elflord
-    else
+"	colorscheme elflord
+"    else
 	colorscheme desert256
     "colorscheme desert
     " Highlight of Search items is broken in desert256 
     " so fix that
     "hi Search ctermfg=0 ctermbg=159
-    endif
+"    endif
+elseif has("gui_running")
+    " dark background looks better
+    set bg=dark
+    colorscheme solarized
 else
     colorscheme desert
 endif
@@ -375,7 +378,6 @@ if has('persistent_undo')
     set undofile
 endif
 
-
 " Add ellipsis … to the digraphs
 " this overwrite the default, but my current font won't display that 
 " letter anyway ;)
@@ -395,7 +397,6 @@ if expand("$TEST8COLORTERM")=='1'
     set t_Co=8
     colors default
 endif
-
 
 " source local .vimrc
 " This is potentialy dangerous
@@ -437,4 +438,67 @@ command! Mktmpdir call mkdir(fnamemodify(tempname(),":p:h"),"",0700)
 if exists("##SwapExists")
     autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
 endif
+
+" use bracketed paste mode for xterm/screen
+" also see http://ttssh2.sourceforge.jp/manual/en/usage/tips/vim.html
+" does this work also with urxvt?
+if &term =~ "xterm"
+    let &t_ti .= "\e[?2004h"
+    let &t_te .= "\e[?2004l"
+    let &pastetoggle = "\e[201~"
+
+    function XTermPasteBegin(ret)
+        set paste
+        return a:ret
+    endfunction
+
+    noremap <special> <expr> <Esc>[200~ XTermPasteBegin("0i")
+    inoremap <special> <expr> <Esc>[200~ XTermPasteBegin("")
+    cnoremap <special> <Esc>[200~ <nop>
+    cnoremap <special> <Esc>[201~ <nop>
+endif
+
+
+" Make CSApprox shut up
+let g:CSApprox_verbose_level=0
+
+finish
+
+" Disabled, cause seems to brake something.
+" used for bracketed paste mode
+if &term == "screen"
+    let &t_SI .= "\eP\e[3 q\e\\"
+    let &t_EI .= "\eP\e[1 q\e\\"
+elseif !exists("$TERMINATOR_UUID")
+    " doesn't work with terminator
+    let &t_SI .= "\e[3 q"
+    let &t_EI .= "\e[1 q"
+endif
+
+"div {
+"    blook-is:	    red;
+"    some-color:	    #d13632;
+"    next-color:	    #e2571e;
+"    other-color:    #ec883a;
+"    hey-color:	    #e69333;
+"    vim-does-it:    #d6a525 #cdb923;
+"    rgb-is-ok:	    rgb(209, 210, 44);
+"    rgba-is-ok:	    rgba(209, 210, 44, 90);
+"    even-string:    yellow;
+"    for-what:	    #96bf33, #666, #fff;
+"    for-css:	    #479e1b;
+"    it-s-good:	    rgb(29, 60 %, 76), rgb(50, 50%, 126);
+"    once-again:	    #1d829e;
+"    yup:	    #503fa9 #8a2aa7;
+"    rainbow:	    #a8225f;
+"    are:	    #c83964;
+"    beautiful:	    #d33264;
+"    final:	    black, white;
+"    hsl-red:	    hsl(0,100%,50%)
+"    lime:	    hsla(120,100%,50%,1)
+"    lightgreen:     hsl(120, 100%, 75%)
+"    Hexcode-with_:  #abcdee_
+"    steelblue :
+"}
+
 

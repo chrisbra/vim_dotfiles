@@ -2,7 +2,7 @@
 " Vim Setting for PHP-files
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Di 2007-08-28 21:04
+" Last update: Do 2012-07-05 13:34
 "-------------------------------------------------------
 
 " Set C-Indention
@@ -23,3 +23,5 @@ endfunction
 vmap <silent> <leader>co :<C-U>sil! '<,'>:call Comment()<CR>
 vmap <silent> <leader>uco :<C-U>sil! '<,'>:call UnComment()<CR>
  
+let g:nrrw_custom_options={}
+let g:nrrw_custom_options['filetype']='php'

@@ -2,7 +2,7 @@
 " Vim Functions from 
 " Christian Brabandt cb@256bit.org
 "
-" Last update: Mo 2011-09-05 10:40
+" Last update: Fr 2012-07-06 20:07
 " 
 "-------------------------------------------------------
 
@@ -123,7 +123,7 @@ else
         endif
 
     "    " set the tab page number (for mouse clicks)
-        let s .= '%' . (i + 1) . 'T'
+        let s .= '%' . (i + 1) . 'T'. ' '. (i+1). ' '
 
         " the label is made by MyTabLabel()
         let s .= ' %{MyTabLabel(' . (i + 1) . ')} '
@@ -481,9 +481,26 @@ function! CompleteDigraph1(findstart,base)
 endfun
 
 
-set completefunc=CompleteDigraph1
+"set completefunc=CompleteDigraph1
 
 function! Info(cmd)
       execute "new|r!info --subnodes --output - ". a:cmd
 endfunction
 com! -nargs=* Info call Info(<f-args>)
+
+function! SpellLegend()
+    for [l:group, l:explanation] in [
+    \   ['SpellBad', 'word not recognized'],
+    \   ['SpellCap', 'word not capitalized'],
+    \   ['SpellRare', 'rare word'],
+    \   ['SpellLocal', 'wrong spelling for selected region']
+    \]
+        echo ''
+        echon l:group . "\t"
+        execute 'echohl' l:group
+        echon 'xxx'
+        echohl None
+        echon "\t" . l:explanation
+    endfor
+endfunction
+command! -bar SpellLegend call SpellLegend()

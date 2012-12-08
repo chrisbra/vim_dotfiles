@@ -1,3 +1,5 @@
+" disabled:
+finish
 sy spell toplevel
 sy sync fromstart
 

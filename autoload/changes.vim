@@ -1,13 +1,13 @@
 " Changes.vim - Using Signs for indicating changed lines
 " ---------------------------------------------------------------
-" Version:  0.11
+" Version:  0.12
 " Authors:  Christian Brabandt <cb@256bit.org>
-" Last Change: Tue, 04 May 2010 21:16:28 +0200
+" Last Change: Tue, 31 Jan 2012 22:07:31 +0100
 
 " Script:  http://www.vim.org/scripts/script.php?script_id=3052
 " License: VIM License
 " Documentation: see :help changesPlugin.txt
-" GetLatestVimScripts: 3052 11 :AutoInstall: ChangesPlugin.vim
+" GetLatestVimScripts: 3052 12 :AutoInstall: ChangesPlugin.vim
 
 " Documentation:"{{{1
 " See :h ChangesPlugin.txt
@@ -79,7 +79,7 @@ fu! changes#Output(force)"{{{1
     endif
 endfu
 
-fu! s:Init()"{{{1
+fu! changes#Init()"{{{1
     " Message queue, that will be displayed.
     let s:msg      = []
     " Only check the first time this file is loaded
@@ -197,17 +197,24 @@ fu! s:UpdateView()"{{{1
     endif
 endfu
 
-fu! changes#GetDiff(arg)"{{{1
+fu! changes#GetDiff(arg, ...)"{{{1
     " a:arg == 1 Create signs
     " a:arg == 2 Show Overview Window
     " a:arg == 3 Stay in diff mode
     try
-	call s:Init()
+	call changes#Init()
     catch /^changes:/
 	let s:verbose = 0
 	call s:WarningMsg()
 	return
     endtry
+
+    if !filereadable(bufname(''))
+	call add(s:msg,"You've opened a new file so viewing changes is disabled until the file is saved (You have to reenable it if not using autocmd).")
+	let s:verbose = 0
+	call s:WarningMsg()
+	return
+    endif
 
     " Does not make sense to check an empty buffer
     if empty(bufname(''))
@@ -229,12 +236,12 @@ fu! changes#GetDiff(arg)"{{{1
     let s:temp = {'del': []}
     let b:diffhl={'add': [], 'del': [], 'ch': []}
     try
-	call s:MakeDiff()
+	call s:MakeDiff(exists("a:1") ? a:1 : '')
 	call s:CheckLines(1)
-	" Switch to other buffer and check for deleted lines
-	noa wincmd p
+	call s:MoveToPrevWindow()
 	call s:CheckLines(0)
-	noa wincmd p
+	" Switch to other buffer and check for deleted lines
+	call s:MoveToPrevWindow()
 	let b:diffhl['del'] = s:temp['del']
 	call s:CheckDeletedLines()
 	" Check for empty dict of signs
@@ -311,7 +318,7 @@ fu! s:UnPlaceSigns()"{{{1
     endfor
 endfu
 
-fu! s:MakeDiff()"{{{1
+fu! s:MakeDiff(...)"{{{1
     " Get diff for current buffer with original
     let o_pwd = getcwd()
     let bnr = bufnr('%')
@@ -319,7 +326,7 @@ fu! s:MakeDiff()"{{{1
     noa vert new
     set bt=nofile
     if !s:vcs
-	r #
+	exe "r " (exists("a:1") && !empty(a:1) ? a:1 : '#')
 	let &l:ft=ft
     else
 	let vcs=getbufvar(bnr, 'vcs_type')
@@ -341,7 +348,7 @@ fu! s:MakeDiff()"{{{1
 	    if fsize == 0
 		call delete(s:temp_file)
 		call add(s:msg,"Couldn't get VCS output, aborting")
-		wincmd p
+		call s:MoveToPrevWindow()
 		throw "changes:abort"
 	    endif
 	    exe ':r' s:temp_file
@@ -349,13 +356,13 @@ fu! s:MakeDiff()"{{{1
         catch /^changes: No git Repository found/
 	    call add(s:msg,"Unable to find git Top level repository.")
 	    echo v:errmsg
-	    wincmd p
+	    call s:MoveToPrevWindow()
 	    throw "changes:abort"
 	endtry
     endif
     0d_
     diffthis
-    noa wincmd p
+    call s:MoveToPrevWindow()
     diffthis
     if s:vcs && exists("vcs") && vcs=='cvs'
 	exe "cd "  o_pwd
@@ -383,7 +390,7 @@ endfu
 
 fu! s:DiffOff()"{{{1
     " Turn off Diff Mode and close buffer
-    wincmd p
+    call s:MoveToPrevWindow()
     diffoff!
     q
 endfu
@@ -485,6 +492,16 @@ fu! s:CheckDeletedLines() "{{{1
     endfor
 endfu
 
-
+fu! s:MoveToPrevWindow() "{{{1
+    let winnr = winnr()
+    noa wincmd p
+    if winnr() == winnr
+	" Best effort, there doesn't exist a previous window
+	" where wincmd p can jump to, so move to the next window
+	" (e.g. latexsuite does this:
+	" https://github.com/chrisbra/changesPlugin/issues/5
+	noa wincmd w
+    endif
+endfu
 " Modeline "{{{1
 " vi:fdm=marker fdl=0

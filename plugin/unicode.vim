@@ -1,6 +1,6 @@
 " unicodePlugin : A completion plugin for Unicode glyphs
 " Author: C.Brabandt <cb@256bit.org>
-" Version: 0.9
+" Version: 0.14
 " Copyright: (c) 2009 by Christian Brabandt
 "            The VIM LICENSE applies to unicode.vim, and unicode.txt
 "            (see |copyright|) except use "unicode" instead of "Vim".
@@ -8,7 +8,7 @@
 "  *** ***   Use At-Your-Own-Risk!   *** ***
 "
 " TODO: enable GLVS:
-" GetLatestVimScripts: 2822 9 :AutoInstall: unicode.vim
+" GetLatestVimScripts: 2822 14 :AutoInstall: unicode.vim
 
 " ---------------------------------------------------------------------
 "  Load Once: {{{1
@@ -25,13 +25,12 @@ let s:enableUnicodeCompletion = (exists("g:enableUnicodeCompletion") ? g:enableU
 com! EnableUnicodeCompletion call unicode#Init(1)
 com! DisableUnicodeCompletion call unicode#Init(0)
 com! UnicodeName call unicode#GetUniChar()
+com! -nargs=? -bang Digraphs call unicode#OutputDigraphs(<q-args>, <q-bang>)
 
 if s:enableUnicodeCompletion
-    call unicode#Init(s:enableUnicodeCompletion)
+    exe "call unicode#Init(s:enableUnicodeCompletion)"
     "let s:enableUnicodeCompletion = !s:enableUnicodeCompletion
 endif
-
-
 
 " =====================================================================
 " Restoration And Modelines: {{{1

@@ -1,6 +1,6 @@
 *vim_faq.txt*	Frequently Asked Questions
 
-Last updated on: 18 Juli 2011
+Last updated on: 26 September 2012
 
 	  VIM FAQ by: Christian Brabandt <cb@256bit.org>
 
@@ -200,7 +200,9 @@ SECTION 11 - SEARCHING TEXT
 |faq-11.21| How do I search for a text string that spans multiple lines?
 |faq-11.22| How do I search for a pattern only within a range of lines
 	  in a buffer?
-|faq-11.23| How do I clear the last searched pattern? 
+|faq-11.23| How do I clear the last searched pattern?
+|faq-11.24| Why does this pattern 'a.\{-}p\@!' not match?
+|faq-11.25| How can I use '/' within a pattern, without escaping it?
                                                         *faq-changing-text*
 SECTION 12 - CHANGING TEXT
 |faq-12.1|  How do I delete all the trailing white space characters (SPACE
@@ -351,7 +353,7 @@ SECTION 17 - VIMINFO
 	  in the viminfo file. What should I do to get rid of these
 	  messages?
 |faq-17.2|  How do I disable the viminfo feature?
-|faq-17.3|  How do I save and use Vim marks across Vim sessions?
+|faq-17.3|  How do I save and use Vim marks/commands across Vim sessions? 
                                                         *faq-remote-editing*
 SECTION 18 - REMOTE EDITING
 |faq-18.1|  How do I open a file with existing instance of gvim? What
@@ -469,7 +471,7 @@ SECTION 24 - SYNTAX HIGHLIGHT
 |faq-24.6|  How do I highlight the special characters (tabs, trailing spaces,
 	  end of line, etc) displayed by the 'list' option?
 |faq-24.7|  How do I specify a colorscheme in my .vimrc/.gvimrc file, so that
-	  Vim uses the specified colorscheme everytime?
+	  Vim uses the specified colorscheme every time?
 |faq-24.8|  Vim syntax highlighting is broken. When I am editing a file, some
 	  parts of the file is not syntax highlighted or syntax highlighted
 	  incorrectly.
@@ -485,6 +487,8 @@ SECTION 24 - SYNTAX HIGHLIGHT
 	  highlighting into a HTML file?
 |faq-24.15| How do I list the definition of all the current highlight
 	  groups?
+|faq-24.16| How can I embed one syntax highlighting language into another
+	  one?
                                                 *faq-vim-script-writing*
 SECTION 25 - VIM SCRIPT WRITING
 |faq-25.1|  How do I list the names of all the scripts sourced by Vim?
@@ -734,6 +738,8 @@ SECTION 36 - VARIOUS
 |faq-36.10| How do I use Copy and Paste with Vim?
 |faq-36.11| Why shouldn't I modify the files in the system runtime
 	  directory?
+|faq-36.12| How do I debug and find out if there is an error in my .vimrc
+	  or in any other file that is read during startup?
                                                                 *faq-unicode*
 SECTION 37 - UNICODE
 |faq-37.1|  Is it possible to create Unicode files using Vim?
@@ -832,6 +838,9 @@ Features to modernise Vi:
 
      Allows you to set the number of times you can undo your changes in a
      file buffer. You can also redo an undone change.
+     Also starting with version 7.3 Vim can permanently store your undo
+     information, so that you can undo your changes which you have done
+     in a previous editing session.
 <
   Tabs, Multiple windows and buffers >
 
@@ -1093,6 +1102,9 @@ You can download the HTML/PDF/PS format of the Vim user manual from: >
 
     http://vimdoc.sourceforge.net/
 <
+Note, the user manual from that page is currently pretty outdated. It's
+best to either use the documentation that comes with vim or use the
+online version at http://vimhelp.appspot.com
  								*faq-2.5*
 2.5. I have a "xyz" (some) problem with Vim. How do I determine it is a
      problem with my setup or with Vim?
@@ -1135,12 +1147,14 @@ First collect the required information using the following command: >
     :source $VIMRUNTIME/bugreport.vim
 <
 Now send the resulting text from the above command to the bugs@vim.org
-e-mail address.
+e-mail address. There is also a public bug tracker available at
+http://code.google.com/p/vim/issues/list. A copy of each message there
+will be forwarded to the Vim Development list.
 
-The Vim Development mailing list (see above) is a good place to discuss
-general bugs.  If the bug you find is with syntax highlighting or some
-other "added feature" (i.e. not directly programmed into vim), attempt to
-inform the maintainer of that feature.
+The Vim Development mailing list (see Question 2.2 |faq-2.2|) is a good
+place to discuss general bugs.  If the bug you find is with syntax
+highlighting or some other "added feature" (i.e. not directly programmed
+into vim), attempt to inform the maintainer of that feature.
 
 For more information, read 
 
@@ -1645,6 +1659,12 @@ very large files in Vim: >
 Note that the above settings will disable many Vim features including the
 following: Swap files support for crash recovery, undo support, syntax
 highlighting, filetype detection and other autocommand based features.
+
+There is also the LargeFile plugin available at
+http://www.vim.org/scripts/script.php?script_id=1506
+which automatically sets these options, when working with large files
+(it is configurable, what is considered to be a large file, be default,
+it is 100MB).
 
 =============================================================================
  								*faq-6*
@@ -2904,6 +2924,52 @@ For more information, read
     |:let-@|
     |autocmd-searchpat|
     |last-pattern|
+ 								*faq-11.24*
+11.24. Why does this pattern 'a.\{-}p\@!' not match?
+
+"\{-}" doesn't just mean "as few as possible", it means "as few as
+possible to make the whole pattern succeed". If it didn't match the 'p',
+the whole pattern would fail (because of the "p\@!") so it does match
+the "p". It is a longer match, but it is the shortest match that makes
+the whole pattern succeed. 
+
+If you wanted "as few as possible regardless" you would use "\@>", which
+basically divides a pattern up so that the pieces either side behave
+independently. If the pattern were "a.\{-}\@>p\@!" then ".\{-}" would
+always match nothing because that's the smallest match that can succeed
+when there are not other restrictions. The whole pattern then would
+behave the same as "ap\@!", i.e. it would match any "a" not followed by
+a "p").
+
+This means, it matches as
+few as possible 'a's without trying to keep going until Vim finds the
+longest match. This means, it will still match 'ap'.
+
+ 								*faq-11.25*
+11.25. How can I use '/' within a pattern, without escaping it?
+
+When using / to search for a pattern, you need to escape all '/' within
+the pattern, because they would otherwise terminate the pattern. So you
+can't directly search for /usr/share/doc/ but need to search for
+\/usr\/share\/doc\/
+
+The easiest solution around that, would be to use '?' to start a
+backward search and afterwards use /<CR> to use the last search-pattern
+in forward direction.
+
+If you have a Vim, that has the eval-feature built in (which needs at
+least a normal built or higher), you can also directly paste the pattern
+into the search register:
+
+:let @/ = '/usr/share/doc/'
+
+Then use 'n' to jump to the next occurrence.
+
+See also the help at >
+
+    :h @/
+    :h /<CR>
+<
 
 =============================================================================
  								*faq-12*
@@ -3510,6 +3576,17 @@ The last two commands will pad the line numbers with space characters.  The
 last command will right align the numbers and the command before that will
 left align the numbers.
 
+If you don't want to number consecutive lines but rather non-consecutive
+regions, you can also use this idiom: >
+
+    :let i = 1
+    :g/TODO/s/^/\=printf('%2d.',i)|let i+=1
+<
+This first initializes the variable i with 1. In the next line, a :g
+command is used to perform a substitute command only on lines, that
+match 'TODO'. After the substitute command has taken place, the variable
+i will be incremented by 1.
+
 For more information, read 
 
     |sub-replace-special|
@@ -4009,9 +4086,9 @@ You can fix this problem in a terminal Vim in several ways:
    permanently set the 'paste' option in your .vimrc file. If you are
    going to repeat these steps often, then you can set the
    'pastetoggle' option to a key. When you press the specified key,
-   the 'paste' option option will be toggled. You can press the key
-   once before pasting the text and the press the key once after
-   pasting the text. Note that when the 'paste' option is set, all the
+   the 'paste' option will be toggled. You can press the key once
+   before pasting the text and the press the key once after pasting
+   the text. Note that when the 'paste' option is set, all the
    mappings and abbreviations are disabled.  For more information,
    read the following Vim help topics: 
 
@@ -4457,12 +4534,26 @@ For more information, read
     |'viminfo'|
 
  								*faq-17.3*
-17.3. How do I save and use Vim marks across Vim sessions?
+17.3. How do I save and use Vim marks/commands across Vim sessions?
 
 You can save and restore Vim marks across Vim sessions using the viminfo
 file. To use the viminfo file, make sure the 'viminfo' option is not empty.
 To save and restore Vim marks, the 'viminfo' option should not contain the
 'f' flag or should have a value greater than zero for the 'f' option.
+
+You can also use the viminfo file to synchronize the commandline history
+across different sessions using :wvimfo and :rviminfo commands together
+with the FocusGained and FocusLost autocommands: >
+
+    augroup viminfo
+        au!
+        au FocusLost   * wviminfo
+        au FocusGained * rviminfo
+    augroup end
+<
+Note, this will only work reliably, when Vim can detect the FocusLost
+and FocusGained autocommands correctly. This means it should work with
+GVim but might depend on your terminal for konsole vim.
 
 For more information, read 
 
@@ -4471,6 +4562,8 @@ For more information, read
     |'viminfo'|
     |:wviminfo|
     |:rviminfo|
+    |FocusLost|
+    |FocusGained|
 
 =============================================================================
  								*faq-18*
@@ -4881,12 +4974,53 @@ For more information, read
  								*faq-20.4*
 20.4. I am not able to create a mapping for the <xxx> key. What is wrong?
 
-First make sure that the key is passed to Vim. In insert mode, press CTRL-V
-followed by the desired key.  You should see the keycode corresponding to
-the key .  If you do see the keycode, then you can create a mapping for the
-key using the following command: >
+1) First make sure, the key is passed correctly to Vim. To determine if
+   this is the case, put Vim in Insert mode and then hit Ctrl-V (or
+   Ctrl-Q if your Ctrl-V is remapped to the paste operation (e.g. on
+   Windows if you are using the mswin.vim script file) followed by your
+   key.
 
-    :map <C-V><xxx>  <your_command_to_be_mapped>
+   If nothing appears in the buffer (and assuming that you have
+   'showcmd' on, ^V remains displayed near the bottom right of the Vim
+   screen), then Vim doesn't get your key correctly and there is nothing
+   to be done, other than selecting a different key for your mapping or
+   using GVim, which should recognise the key correctly.
+
+2) Possibly, Vim gets your key, but sees it as no different than
+   something else. Say you want to map Ctrl-Right, then in Insert mode
+   hit Ctrl-K followed by Ctrl-Right. If Vim displays <C-Right> it has
+   correctly seen the keystroke and you should be able to map it (by
+   using <C-Right> as your {lhs}). If it displays <Right> it has seen
+   the keystroke but as if you hadn't held Ctrl down: this means your
+   temrinal passes Ctrl-Right as if it were just <Right>. Anything else
+   means the key has been misidentified.
+
+3) If the key is seen, but not as itself and not as some recognizable
+   key, then there is probably an error in the terminal library for the
+   current terminal (termcap or terminfo database). In that case >
+
+        :set term?
+<
+   will tell you which termcap or terminfo Vim is using. You can try to
+   tell vim, what termcode to use in that terminal, by adding the
+   following to your vimrc: >
+
+        if &term == <termname>
+            set <C-Right>=<keycode>
+        endif
+<
+   where <termname> above should be replaced by the value of 'term'
+   (with quotes around it) and <keycode> by what you get when hitting
+   Ctrl-V followed by Ctrl-Right in Insert mode (with nothing around
+   it). <C-Right> should be left as-is (9 characters). Don't forget that
+   in a :set command, white space is not allowed between the equal sign
+   and the value, and any space, double quote, vertical bar or backslash
+   present as part of the value must be backslash-escaped.
+
+   Now you should be able to see the keycode corresponding to the key
+   and you can create a mapping for the key using the following command: >
+
+        :map <C-Right>  <your_command_to_be_mapped>
 <
 For more information, read 
 
@@ -4917,7 +5051,12 @@ Ctrl-[ and Esc, Ctrl-? and Del).
 The "safest" keys to use in Vim for the {lhs} of a mapping are the F
 keys, with or without Shift: <F2> to <F12> and <S-F1> to <S-F12>. (Some
 OSes, including mine, intercept Ctrl-Fn and Alt-Fn, which never reach an
-application program such as vim or gvim.) 
+application program such as vim or gvim).
+
+You can try other combinations of Ctrl + any key, but they may either
+not work everywhere (e.g. the terminal might not pass that key to Vim,
+or they might have unintended side effects (e.g. mapping <C-I> means
+also to map <Tab>).
  								*faq-20.6*
 20.6. How do I map the numeric keypad keys?
 
@@ -5670,7 +5809,7 @@ For more information, read
 
  								*faq-24.7*
 24.7. How do I specify a colorscheme in my .vimrc/.gvimrc file, so that Vim
-      uses the specified colorscheme everytime?
+      uses the specified colorscheme every time?
 
 You can specify the color scheme using the ":colorscheme" command in your
 .vimrc or .gvimrc file: >
@@ -5708,12 +5847,12 @@ For more information, read
 Yes. Vim includes the matchparen Plugin as standard plugin that is enabled
 by default. Whenever the cursor moves over an item defined with the
 'matchpairs' option, Vim will highlight the corresponding bracket using the
-MatchParen hilighting group.
+MatchParen highlighting group.
 
 However, if the corresponding parenthesis is not visible in the current
 window, the cursor won't jump to it. 
 
-The matchit plugin provides a similar function, that let's the cursor
+The matchit plugin provides a similar function, that lets the cursor
 jump to related items (e.g. "if", "else", "endif" items) and skips
 matches in comments. This uses the % command to jump to corresponding
 items. Though both plugins provide similar functions they are unrelated
@@ -5810,7 +5949,25 @@ You can list the definition of all the current highlight groups using the
 For more information, read 
 
     |:highlight|
+ 								*faq-24.16*
+24.16. How can I embed one syntax highlighting language into another one?
 
+It is possible to include one syntax highlighting into another one,
+however most of the currently deployed syntax highlighting scripts are
+not prepared to be included into another syntax script.
+
+You can however create your own custom script to define your own
+regions, which will be highlighted with a different language.
+
+See the wiki for a comprehensive solution:
+http://vim.wikia.com/wiki/Different_syntax_highlighting_within_regions_of_a_file
+
+For more information, read >
+
+    |:syn-include|
+    |sh-awk|
+    
+<
 =============================================================================
  								*faq-25*
 SECTION 25 - VIM SCRIPT WRITING
@@ -6423,10 +6580,45 @@ For more information, read
  								*faq-26.3*
 26.3. How do I extend an existing filetype plugin?
 
-You can extend an existing filetype plugin by creating a file under either
-the $VIMRTUNTIME/after/ftplugin or the $VIMRTUNTIME/ftplugin directory. The
-name of the file should be the same as the name of the existing filetype
-plugin file. You can place your additions to the new file.
+You can extend an existing filetype plugin by creating a file in the
+after/ directory in any of the 'runtimepath' directories.
+
+
+- for small changes to be done after (and in addition to) what is
+  already done by the ftplugin installed with Vim, use an after-directory,
+  as follows (replacing foobar by the 'filetype' of the concerned
+  files): >
+
+    - For changes private to one user:
+        - on Windows:
+            $HOME/vimfiles/after/ftplugin/foobar.vim
+        - on Unix-like OSes:
+            $HOME/.vim/after/ftplugin/foobar.vim
+    - For changes affecting all users on the system:
+        $VIM/vimfiles/after/ftplugin/foobar.vim
+<
+- when replacing the whole filetype-plugin by a different version, or
+  when installing a new ftplugin for some filetype not yet supported by
+  Vim out of the box: use the same paths without the after/ in them. In
+  that case you should place near the start of your plugin an "if...
+  finish... endif... let" block like the one in the plugins distributed
+  with Vim.
+
+All the above paths are given in Vim terminology (which is similar to
+Unix terminology, but is understood even by Vim for Windows); they don't
+exist by default, so the first time you need them you will have to
+create them using mkdir (on any OS including DOS/Windows) or md (on
+DOS/Windows only). $VIM and, on DOS/Windows, $HOME, do not necessarily
+exist outside Vim. If $HOME has no value (or no valid value) inside Vim,
+you can use $VIM instead; but on any but possibly very old versions of
+Windows, $HOMEDRIVE and $HOMEPATH are defined by the system, and if
+$HOME is undefined at Vim startup, Vim will set it by expanding
+$HOMEDRIVE$HOMEPATH before sourcing your vimrc. To know which values Vim
+uses, you can type (in a running Vim): >
+
+    :echo $VIM
+    :echo $HOME
+<
 
 If you placed the file in the after/ftplugin runtime directory, then Vim
 will first source the existing filetype plugin file and then will source
@@ -7809,10 +8001,10 @@ For more information, read
     |_vimrc|
 
  								*faq-33.12*
-33.12. Everytime I save a file, Vim warns about the file being changed
+33.12. Every time I save a file, Vim warns about the file being changed
        outside of Vim. Why?
 
-If you get the following warning message, everytime you save a file: >
+If you get the following warning message, every time you save a file: >
 
     WARNING: The file has been changed since reading it!!!
     Do you really want to write to it (y/n)?
@@ -8327,8 +8519,8 @@ setting. For more information, read
  								*faq-36.11*
 36.11. Why shouldn't I modify the files in the system runtime directory?
 
-Just be careful about modifying files under $VIMRUNTIME, which in
-is usually /usr/share/vim/vimXX (Unix) or C:\Program Files\vim\vimXX
+Just be careful about modifying files under $VIMRUNTIME, which usually
+is /usr/share/vim/vimXX (Unix) or C:\Program Files\vim\vimXX
 (Windows) and XX being the version for which it applies, e.g. 73 for Vim
 7.3.
 
@@ -8346,6 +8538,59 @@ Consequently, take a look at
 for an explanation of several ways to modify Vim's response to
 different filetypes and where to put those modifications so that
 they will not be overwritten.
+
+ 								*faq-36.12*
+36.12. How do I debug and find out if there is an error in my .vimrc or
+       in any other file that is read during startup?
+
+First, you need to find out, whether the error is in the actual runtime
+files or any plugin that is distributed with Vim or whether it is a
+simple side effect of any configuration option from your .vimrc. So
+first, start vim like this: >
+
+    vim -u NONE -U NONE -N -i NONE
+<
+this starts Vim in nocompatible mode (-N), without reading your viminfo
+file (-i NONE), without reading any configuration file (-u NONE for not
+reading .vimrc file and -U NONE for not reading a .gvimrc file).
+
+If the error persists, the chance is good you've found a bug in Vim (see
+also Question 2.6. |faq-2.6|)
+
+If the error does not occur when starting Vim this way, you need to find
+out, what triggers the error, you try starting Vim this way: >
+
+    vim -u NONE -U NONE -N
+<
+If the error occurs, the problem is your .viminfo file. Simply delete
+the viminfo file then. If the error does not occur, try: >
+
+    vim -u ~/.vimrc --noplugin -N -i NONE
+<
+This will simply use your .vimrc as configuration file, but not load any
+plugins. If the error occurs this time, the error is possibly caused by
+some configuration option inside your .vimrc file. Depending on the
+length of your vimrc file, it can be quite hard to trace the origin
+within that file.
+
+The best way is to add :finish command in the middle of your .vimrc.
+Then restart again using the same command line. If the error still
+occurs, the bug must be caused because of a setting in the first half of
+your .vimrc. If it doesn't happen, the problematic setting must be in
+the second half of your .vimrc. So move the :finish command to the
+middle of that half, of which you know that triggers the error and move
+your way along, until you find the problematic option. If your .vimrc is
+350 lines long, you need at a maximum 9 tries to find the offending line
+(in practise, this can often be further reduced, since often lines
+depend on each other).
+
+If the problem does not occur, when only loading your .vimrc file, the
+error must be caused by a plugin or another runtime file (indent
+autoload or syntax script). Check the output of the :scriptnames command
+to see what files have been loaded and for each one try to disable each
+one by one and see which one triggers the bug. (Often files that are
+loaded by vim, have a simple configuration variable to disable them, but
+you need to check inside each file separately.
 
 =============================================================================
  								*faq-37*
@@ -8499,7 +8744,7 @@ Several methods are available:
 - Characters for which a digraph is defined can be typed as two characters
   prefixed by <Ctrl-K>.
 - If you have set the 'digraph' option, you can enter the characters for
-  which a digrph is defined as <char1><BS><char2>.
+  which a digraph is defined as <char1><BS><char2>.
 - Any character can be entered by using a <Ctrl-V> prefix (or <Ctrl-Q> if
   <Ctrl-V> is remapped to paste from the clipboard).
 
