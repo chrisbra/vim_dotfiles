@@ -2,20 +2,13 @@
 " Vim Setting for Mappings
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Do 2012-01-26 19:16
+" Last update: Do 2013-08-01 13:29
 
 "-------------------------------------------------------
 " Useful mappings
 "---------------------------------------------------------
 " Fold all regions except the visually selected one:
 vnoremap ,h :<c-u>1,'<lt>-fold<bar>'>+,$fold<CR>
-
-" make <BS> <DEL> <C-U> and <C-W> undoable
-" h i_Ctrl-g_u
-inoremap <C-U> <C-G>u<C-U>
-inoremap <C-W> <C-G>u<C-W>
-inoremap <BS> <C-G>u<BS>
-inoremap <DEL> <C-G>u<DEL>
 
 nmap <F7> :call ToggleFoldByCurrentSearchPattern()<CR>
 
@@ -27,11 +20,6 @@ set pastetoggle=<F10>
 
 " Insert last buffer with ^E in insert mode
 imap  pa
-" You are too fast and keep pressing `shift' if you type :w, try following
-":command! -bang W w<bang>
-command! -bang -bar -nargs=? -complete=file -range=% W  <line1>,<line2>w<bang> <args>
-command! -bang Wq wq<bang>
-command! -bang Q q<bang>
 " disallow opening the commandline window which by default is bound to 
 " q: (I tend to usually mean :q)
 " The commandline window is still accessible using q/ or q?
@@ -60,13 +48,13 @@ nmap ,e ^wy$:r!<cword><CR>
 " (see: http://www.vim.org/scripts/script.php?script_id=1218)
 " Allows to comment lines in different languages
 " Comment current line
-nmap ,co ,cc
+"nmap ,co ,cc
 " uncoment current line
-nmap ,uco ,cu
+"nmap ,uco ,cu
 " toggle comment current line
-nmap ,tco ,c<space>
+"nmap ,tco ,c<space>
 " Do not yiel about unknown filetypes.
-let NERDShutUp=1
+"let NERDShutUp=1
 
 " map the DiffOrig command to  <leader>do
 " HINT: *d*iff with *o*riginal file
@@ -141,7 +129,21 @@ func! <sid>HistDel(vmode)
     return ""
 endfunc
 
+" Vim Tips wiki Tip 171 https://vim.wikia.com/wiki/VimTip171
+fu! s:VSetSearch(cmdtype)
+    let _t = @s
+    norm! gv"sy
+    let @/ = '\V'. substitute(escape(@s, a:cmdtype.'\'), '\n', '\\n', 'g')
+    let @s = _t
+endfu
 
+xnoremap * :<C-U>call <sid>VSetSearch('/')<CR>/<C-R>/<C-R>=@/<CR><CR>
+xnoremap # :<C-U>call <sid>VSetSearch('?')<CR>/<C-R>?<C-R>=@/<CR><CR>
+
+" ["x][N]""         List contents of the passed register / [N] named
+"                   registers / all registers (that typically contain
+"                   pasteable text).
+nnoremap <silent> <expr> "" ':<C-u>registers ' . (v:register ==# '"' ? (v:count ? strpart('abcdefghijklmnopqrstuvwxyz', 0, v:count1) : '"0123456789abcdefghijklmnopqrstuvwxyz*+.') : v:register) . "<CR>"
 
 " Notations
 "<C-M> == <CR>

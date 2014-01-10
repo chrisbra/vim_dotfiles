@@ -1,10 +1,10 @@
 " Plugin:       Highlight Colornames and Values
 " Maintainer:   Christian Brabandt <cb@256bit.org>
 " URL:          http://www.github.com/chrisbra/color_highlight
-" Last Change: Wed, 25 Jul 2012 22:37:23 +0200
+" Last Change: Wed, 14 Aug 2013 22:13:54 +0200
 " Licence:      Vim License (see :h License)
-" Version:      0.7
-" GetLatestVimScripts: 3963 7 :AutoInstall: Colorizer.vim
+" Version:      0.9
+" GetLatestVimScripts: 3963 9 :AutoInstall: Colorizer.vim
 "
 " This plugin was inspired by the css_color.vim plugin from Nikolaus Hofer.
 " Changes made: - make terminal colors work more reliably and with all
@@ -32,8 +32,9 @@ endfu
 " define commands "{{{1
 command! -bang -range=%  -nargs=? -complete=custom,ColorHiArgs ColorHighlight
         \ :call Colorizer#DoColor(<q-bang>, <q-line1>, <q-line2>, <q-args>)
-command! -bang -nargs=1  RGB2Xterm  
+command! -bang -nargs=1  RGB2Term  
         \ :call Colorizer#RGB2Term(<q-args>)
+command! -nargs=1  Term2RGB     :call Colorizer#Term2RGB(<q-args>)
 
 command! -bang    ColorClear    :call Colorizer#ColorOff()
 command! -bang    ColorToggle   :call Colorizer#ColorToggle()

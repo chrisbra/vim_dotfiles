@@ -1,8 +1,8 @@
 " Vim plugin for checking attachments with mutt
 " Maintainer:  Christian Brabandt <cb@256bit.org>
-" Last Change: Sat, 16 Jun 2012 11:42:26 +0200
-" Version:     0.14
-" GetLatestVimScripts: 2796 14 :AutoInstall: CheckAttach.vim
+" Last Change: Wed, 14 Aug 2013 22:24:01 +0200
+" Version:     0.15
+" GetLatestVimScripts: 2796 15 :AutoInstall: CheckAttach.vim
 
 " Plugin folklore "{{{1
 " Exit quickly when:
@@ -108,7 +108,10 @@ fu! <SID>WriteBuf(bang) "{{{2
     setl nomod
 endfu
 
-fu! <SID>CheckAlreadyAttached() "{{{2
+fu! <SID>CheckAlreadyAttached(line) "{{{2
+    " argument line = subject line
+    let cpos = getpos('.')
+    exe a:line
     " Cursor should be at the subject line,
     " so Attach-header line should be below current position.
     if exists("g:checkattach_once") &&
@@ -118,6 +121,7 @@ fu! <SID>CheckAlreadyAttached() "{{{2
     else
 	return 0
     endif
+    call setpos('.', cpos)
 endfu
 
 fu! <SID>CheckAttach() "{{{2
@@ -145,10 +149,12 @@ fu! <SID>CheckAttach() "{{{2
     let prompt2 = substitute(prompt, 'file', 'another &', '')
 
     " Search starting at the line, that contains the subject
-    call search('^Subject:', 'W')
+    let subjline = search('^Subject:', 'W')
     let subj = getpos('.')
+    " Move after the header line (so we don't match the Subject line
+    noa norm! }
     let ans = 1
-    if search(pat, 'nW') && !<sid>CheckAlreadyAttached()
+    if search(pat, 'nW') && !<sid>CheckAlreadyAttached(subjline)
 	" Delete old highlighting, don't pollute buffer with matches
 	if exists("s:matchid")
 	    "for i in s:matchid | call matchdelete(i) | endfor
@@ -167,7 +173,7 @@ fu! <SID>CheckAttach() "{{{2
 			\ escape(attach, " \t\\"))
 		    redraw
 		endfor
-		if <sid>CheckAlreadyAttached()
+		if <sid>CheckAlreadyAttached(subjline)
 		    let ans = 'n'
 		else
 		    let ans = input(prompt2, "", "file")

@@ -2,16 +2,16 @@
 " Vim Setting for C-files
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Di 2012-07-10 21:46
+" Last update: Di 2013-01-15 22:38
 "-------------------------------------------------------
 " VIm Configuration for C-files
 
 " Set C-Indention
 set cinoptions=e0,n0,f0,{0,}0,^0,:s,=s,l1,gs,hs,ps,ts,+s,c3,C0,(2s,us,\U0,w0,m0,j0,)20,*30
-set cin
+" set cin
 
 " Set the makeprg to `gcc -O2 -Wall -o <filename> <filename.ext>'
-set makeprg=gcc\ -O2\ -Wall\ -o\ %<\ %
+"set makeprg=gcc\ -O2\ -Wall\ -o\ %<\ %
 
 " Comment text in visual mode
 " select a region and press ,co

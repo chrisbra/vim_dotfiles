@@ -2,7 +2,7 @@
 " Vim Functions from 
 " Christian Brabandt cb@256bit.org
 "
-" Last update: Fr 2012-07-06 20:07
+" Last update: Sa 2012-12-08 13:36
 " 
 "-------------------------------------------------------
 
@@ -70,14 +70,14 @@ endfunction
 " Requires zsh for "print -P $PS1" / replace if needed.
 " Your prompt should end in > (and only contain one)
 
-map __start :imap <C-V><C-M> <C-O>__cmd<C-V>\|imap <C-V><ESC> <C-V><ESC>__end<C-M>
-noremap __end :iunmap <C-V><CR>\|iunmap <C-V><ESC><C-M>:"Vish ended.<C-M>
+" map __start :imap <C-V><C-M> <C-O>__cmd<C-V>\|imap <C-V><ESC> <C-V><ESC>__end<C-M>
+"noremap __end :iunmap <C-V><CR>\|iunmap <C-V><ESC><C-M>:"Vish ended.<C-M>
 " For bash we substitue print -P $PS1 with echo 'vish> '
-"noremap __cmd 0<ESC>f>ly$:r !<C-R>";print -P $PS1<C-M>A
-"noremap __scmd :r !print -P $PS1<c-M>A
-noremap __cmd 0<ESC>f>ly$:r !<C-R>";echo 'vish> '<C-M>A
-noremap __scmd :r !echo 'vish> '<c-M>A
-map ,sh __start__scmd
+" noremap __cmd 0<ESC>f>ly$:r !<C-R>";print -P $PS1<C-M>A
+" noremap __scmd :r !print -P $PS1<c-M>A
+" noremap __cmd 0<ESC>f>ly$:r !<C-R>";echo 'vish> '<C-M>A
+" noremap __scmd :r !echo 'vish> '<c-M>A
+" map ,sh __start__scmd
 
 
 "-------------------------------------------------------

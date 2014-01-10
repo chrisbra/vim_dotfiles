@@ -1,1 +1,0 @@
-/home/chrisbra/vim_checkout/vim-fugitive/plugin/fugitive.vim

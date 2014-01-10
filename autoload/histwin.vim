@@ -1,8 +1,8 @@
 " histwin.vim - Vim global plugin for browsing the undo tree
 " -------------------------------------------------------------
-" Last Change: Mon, 15 Aug 2011 10:37:51 +0200
+" Last Change: Sat, 16 Feb 2013 23:23:08 +0100
 " Maintainer:  Christian Brabandt <cb@256bit.org>
-" Version:     0.25
+" Version:     0.26
 " Copyright:   (c) 2009, 2010 by Christian Brabandt
 "              The VIM LICENSE applies to histwin.vim 
 "              (see |copyright|) except use "histwin.vim" 
@@ -425,7 +425,9 @@ fun! s:DiffUndoBranch()"{{{1
 	if empty(prevchangenr)
 		return ''
 	endif
-	let cur_ft = &ft
+	let cur_ft   = &ft
+	let cur_fenc = &fenc
+	let cur_bom  = &bomb
 	let buffer=getline(1,'$')
 	try
 		exe ':u ' . prevchangenr
@@ -437,7 +439,7 @@ fun! s:DiffUndoBranch()"{{{1
 	exe ':botright vsp '.tempname()
 	call setline(1, bufname(s:orig_buffer) . ' undo-branch: ' . change)
 	call append('$',buffer)
-    exe "setl ft=".cur_ft
+	exe "setl ft=".cur_ft "fenc=".cur_fenc.(cur_bom ? " bomb" : " nobomb")
 	silent w!
 	diffthis
 	" Fix issue 2 for histwin: http://github.com/chrisbra/histwin/issues/2
@@ -1072,4 +1074,4 @@ endfun
 " Modeline and Finish stuff: {{{1
 let &cpo=s:cpo
 unlet s:cpo
-" vim: ts=4 sts=4 fdm=marker com+=l\:\" fdl=0
+" vim: ts=4 sts=4 fdm=marker com+=l\:\" fdl=0:noet

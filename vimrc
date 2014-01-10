@@ -1,12 +1,11 @@
 "-------------------------------------------------------
-" Global .vimrc Settings from 
+" Global .vimrc Settings from
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Mo 2012-12-03 23:24
+" Last update: Do 2013-10-24 08:42
 "-------------------------------------------------------
 " Personal Vim Configuration File
-"  
-
+"
 " do NOT behave like original vi
 " I like vim's  features a lot better
 " This is already set automatically by sourcing a .vimrc
@@ -36,7 +35,8 @@ if has("multi_byte")
         " optional: defaults for new files
         "setglobal bomb fileencoding=utf-8
 endif
-if 0
+
+if !empty(glob('$HOME/.vim/autoload/pathogen.vim'))
     " Use pathogen as plugin manager
     call pathogen#infect()
     call pathogen#helptags()
@@ -55,7 +55,7 @@ set nojoinspaces
 " vi compatible, set $ to line end, when chaning text
 set cpo+=$
 
-" Turn on filetype detection plugin and indent for specific 
+" Turn on filetype detection plugin and indent for specific
 if exists(":filetype") == 2
     filetype plugin indent on
 endif
@@ -63,6 +63,18 @@ endif
 " Always turn syntax highlighting on
 if has("syntax")
     syntax on
+    " Matching of IP-Addresses Highlight in yellow
+    highlight ipaddr term=bold ctermfg=yellow guifg=yellow
+    " highlight ipaddr ctermbg=green guibg=green
+    match ipaddr /\<\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\>/
+    " highlight VCS conflict markers
+    match ErrorMsg /^\(<\|=\|>\)\{7\}\([^=].\+\)\?$/
+
+    hi def link WhiteSpaceError Error
+    match WhiteSpaceError /[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]/
+
+    " highlight all columns > 80 (max. 256 columns)
+    " let &colorcolumn=join(range(81,335), ',')
 endif
 
 " Tweak timeouts, because the default is too conservative
@@ -70,13 +82,14 @@ endif
 set timeout timeoutlen=3000 ttimeoutlen=100
 
 " Turn on: auto-indent, ruler, show current mode,
-"          showmatching brackets, show additional info, 
+"          showmatching brackets, show additional info,
 "          show always status line
 set ai ruler showmode showmatch wildmenu showcmd ls=2
 
 " Search options: ignore case, increment search, no highlight, smart case
 " nostartofline option
-set ic incsearch nohlsearch smartcase nostartofline
+"set ic incsearch nohlsearch smartcase nostartofline
+set incsearch nohlsearch smartcase nostartofline ignorecase
 
 " show partial lines
 set display+=lastline
@@ -88,6 +101,13 @@ set ww=<,>
 " when using :scrollbind, also bind scrolling horizontally
 set scrollopt+=hor
 
+" use horizontal splits for diff mode
+set diffopt+=horizontal
+
+" English messages please
+lang mess C
+lang ctype C
+
 " Use of a .viminfo file
 "set viminfo=%,!,'50,\"100,:100
 set viminfo=!,'50,\"100,:100
@@ -96,13 +116,16 @@ set viminfo=!,'50,\"100,:100
 set wildmode=list:longest,longest:full
 
 " Enable file modelines
-set modelines=1
+set modelines=5
+
+" Disable the gui:
+set go=
 
 " Format options: see :h fo-table
 " set fo=tcqrn
 
 " Tabstop options
-" one tab indents by 8 spaces (this is the default for most display utilities) 
+" one tab indents by 8 spaces (this is the default for most display utilities)
 " and so it will look like the same
 set ts=8
 " softtabstops make you feel, a tab is 4 spaces wide, instead the default
@@ -112,7 +135,7 @@ set softtabstop=4
 " the amount to indent when using ">>" or autoindent.
 set shiftwidth=4
 " round indent to multiple of 'sw'
-set shiftround  
+set shiftround
 
 " Set backspace (BS) mode: eol,indent,start
 set bs=2
@@ -132,7 +155,6 @@ set nrformats=
 "---------------------------------------------
 " Keyword completion
 "---------------------------------------------
-
 " set dictionary. Press <CTRL>X <CTRL> K for looking up
 " use german words, see debian package `wngerman'
 " set dictionary=/usr/share/dict/ngerman
@@ -148,21 +170,25 @@ endif
 "-------------------------------------------------------
 " STATUSBAR
 " ------------------------------------------------------
-set laststatus=2
-if has("statusline")
-    set statusline=
-    set statusline+=%-3.3n\                      " buffer number
-    set statusline+=%f\                          " file name
-    set statusline+=%h%m%r%w                     " flags
-    set statusline+=\[%{strlen(&ft)?&ft:'none'}, " filetype
-"    set statusline+=%{&encoding},                " encoding
-    set statusline+=%{(&fenc==\"\"?&enc:&fenc)},
-    set statusline+=%{&fileformat}              " file format
-    set statusline+=%{(&bomb?\",BOM\":\"\")}]	 " BOM
-    set statusline+=%=                           " right align
-    "set statusline+=0x%-8B\                      " current char
-    set statusline+=%-10.(%l,%c%V%)\ %p%%        " offset
-    "set statusline=%<%f\ %h%m%r%=%k[%{(&fenc\ ==\ \"\"?&enc:&fenc).(&bomb?\",BOM\":\"\")}]\ %-12.(%l,%c%V%)\ %P
+"  Disabled:
+"  The plugin Vim-Powerline makes an even better status line
+if 0
+    set laststatus=2
+    if has("statusline")
+	set statusline=
+	set statusline+=%-3.3n\                      " buffer number
+	set statusline+=%f\                          " file name
+	set statusline+=%h%m%r%w                     " flags
+	set statusline+=\[%{strlen(&ft)?&ft:'none'}, " filetype
+    "    set statusline+=%{&encoding},                " encoding
+	set statusline+=%{(&fenc==\"\"?&enc:&fenc)},
+	set statusline+=%{&fileformat}              " file format
+	set statusline+=%{(&bomb?\",BOM\":\"\")}]	 " BOM
+	set statusline+=%=                           " right align
+	"set statusline+=0x%-8B\                      " current char
+	set statusline+=%-10.(%l,%c%V%)\ %p%%        " offset
+	"set statusline=%<%f\ %h%m%r%=%k[%{(&fenc\ ==\ \"\"?&enc:&fenc).(&bomb?\",BOM\":\"\")}]\ %-12.(%l,%c%V%)\ %P
+    endif
 endif
 
 "---------------------------------------------
@@ -172,30 +198,8 @@ if ($OS =~"Windows")
     let g:netrw_scp_cmd="\"c:\\Program Files\\PuTTY\\pscp.exe\" -q -batch"
 endif
 
-
-" GnupgSymmetric:
-" see: http://www.vim.org/scripts/script.php?script_id=1403
-"
-" De- and Encrypting Files synchroneously using GPG
-"source ~/.vim/gnupg-symmetric.vim
-
-" PotWiki:
-" http://www.vim.org/scripts/script.php?script_id=1018
-"
-" A Vim Script to create a wiki using plaintext files
-" see :h potwiki
-"let potwiki_dir = "$HOME/Wiki/"
-
-
-if has("syntax")
-    " Matching of IP-Addresses Highlight in yellow
-    highlight ipaddr term=bold ctermfg=yellow guifg=yellow
-    " highlight ipaddr ctermbg=green guibg=green
-    match ipaddr /\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)/ 
-endif
-
 "---------------------------------------------
-" This will highlight the line on which 
+" This will highlight the line on which
 " a search pattern matches.
 "---------------------------------------------
 "au CursorHold * if getline('.') =~ @/ | exe 'match LineNr /\%' .  line(".") . 'l.*/' | else | match | endif
@@ -204,15 +208,6 @@ endif
 " Vim 7 Features
 "---------------------------------------------
 if version >= 700
-    " Minibuffexplorer: is not needed, as vim 7 provides tabbing
-    " therefore diabling it:
-    let loaded_minibufexplorer=1
-
-    " Disbale vimspell (was needed for spellchecking in versions < 7)
-    let loaded_vimspell=1
-    
-    " Enable autoinstalling the newest Plugins using GetLatextVimScripts
-    let g:GetLatestVimScripts_allowautoinstall=1
     " Change the disturbing pink color for omnicompletion
     hi Pmenu guibg=DarkRed
     set spellfile=~/.vim/spellfile.add
@@ -233,23 +228,8 @@ if version >= 700
     set tabline=%!MyTabLine()
 
     " Define :E for opening a new file in a new tab
-    command! -nargs=* -complete=file E :tabnew <args> 
+    command! -nargs=* -complete=file E :tabnew <args>
 else
-    " Minibufferexplorer:
-    " see: http://www.vim.org/scripts/script.php?script_id=159
-    "
-    " Used to display the several different files in a small top windows
-    " like tabbing in firefox
-    " First enable mapping Control+Vim Direction keys [hkjl]
-    let g:miniBufExplMapWindowNavVim = 1
-    " Now enable mapping of Control + Arrow Keys to window 
-    let g:miniBufExplMapWindowNavArrows = 1
-    " Finally enable Mapping of Ctrl+TAB/Ctrl+Shift-TAB for cycling between
-    " the files
-    let g:miniBufExplMapCTabSwitchBufs = 1
-    " There is a bug in vim, to not always show up with syntax highlighting
-    " together with the minibufexpl Script. This can be circumvented by:
-    let g:miniBufExplForceSyntaxEnable = 1
     " Mappings for Minibufexpl
     " switch to next buffer
     " nmap <C-j> :MBEbn<CR>
@@ -257,20 +237,6 @@ else
     " switch to previous buffer
     " nmap <C-k> :MBEbp<CR>
     nmap Od  :MBEbp<CR>
-    "
-    " The following Plugins need a vim version > 700
-    " NERD Commenter 
-    let loaded_nerd_comments = 1
-    " genutils 
-    let loaded_genutils = 1
-    " lookupfile
-    let g:loaded_lookupfile = 1
-    " undo_tags
-    let loaded_undo_tag=1
-    " yankring
-    let loaded_yankring = 30
-    " vcscommand
-    let loaded_VCSCommand = 1
 endif
 
 if version >= 600
@@ -278,7 +244,7 @@ if version >= 600
 " This works only with vim > 6
     set foldenable
     set foldmethod=marker
-    set foldlevel=1
+    set foldlevelstart=0
     "set foldcolumn=1
 endif
 
@@ -308,16 +274,51 @@ elseif (&term =~ 'putty\|xterm-256\|xterm-color\|xterm')
     "set t_AF=^[[38;5;%dm
 endif
 
-" Set a color scheme. I especially like 
+if !empty(&t_ut)
+    " see http://snk.tuxfamily.org/log/vim-256color-bce.html
+    " Not neccessary? (see below
+    let &t_ut=''
+endif
+
+" Make Vim recognize xterm escape sequences for Page and Arrow
+" keys combined with modifiers such as Shift, Control, and Alt.
+" See http://www.reddit.com/r/vim/comments/1a29vk/_/c8tze8p
+" needs in tmux.conf: setw -g xterm-keys on
+if &term =~ '^screen'
+  " Page keys http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/FAQ
+  execute "set t_kP=\e[5;*~"
+  execute "set t_kN=\e[6;*~"
+
+  " Arrow keys http://unix.stackexchange.com/a/34723
+  execute "set <xUp>=\e[1;*A"
+  execute "set <xDown>=\e[1;*B"
+  execute "set <xRight>=\e[1;*C"
+  execute "set <xLeft>=\e[1;*D"
+endif
+
+" console vim has usually a dark background,
+" while in gvim I usually use a light background
+if has("gui_running")
+    set bg=light
+else
+    set bg=dark
+endif
+
+" Set a color scheme. I especially like
 " desert and darkblue
 if (&t_Co == 256) || (&t_Co == 88)
     "if exists("$COLORTERM") && expand("$COLORTERM") =~ "rxvt"
 	"set t_Co=88
 "	colorscheme elflord
 "    else
-	colorscheme desert256
+	"colorscheme desert256
+	" Force dark background for zenburn
+	"let g:zenburn_force_dark_Background = 1
+	"colorscheme zenburn
+	let g:solarized_termcolors=256
+	colors solarized
     "colorscheme desert
-    " Highlight of Search items is broken in desert256 
+    " Highlight of Search items is broken in desert256
     " so fix that
     "hi Search ctermfg=0 ctermbg=159
 "    endif
@@ -329,13 +330,14 @@ else
     colorscheme desert
 endif
 
-" console vim has usually a dark background,
-" while in gvim I usually use a light background
-"if has("gui_running")
-"    set bg=light
-"else
-"    set bg=dark 
-"endif
+if has("syntax")
+    " Make VertSplit take the same background as Normal
+    hi! link VertSplit Normal
+    if has("conceal")
+	hi! link Conceal Normal
+    endif
+endif
+
 
 " In Diff-Mode turn off Syntax highlighting
 if &diff | syntax off | endif
@@ -356,37 +358,41 @@ if has('cscope')
 "  cnoreabbrev csr cs reset
 "  cnoreabbrev css cs show
 "  cnoreabbrev csh cs help
-    cnoreabbrev <expr> csa
-          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs add'  : 'csa')
-    cnoreabbrev <expr> csf
-          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs find' : 'csf')
-    cnoreabbrev <expr> csk
-          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs kill' : 'csk')
-    cnoreabbrev <expr> csr
-          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs reset' : 'csr')
-    cnoreabbrev <expr> css
-          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs show' : 'css')
-    cnoreabbrev <expr> csh
-          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs help' : 'csh')
-
-  
-    let $VIMSRC='/home/chrisbra/code/vim'
-    command! -nargs=0 Cscope cs add $VIMSRC/src/cscope.out $VIMSRC/src
+"    cnoreabbrev <expr> csa
+"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs add'  : 'csa')
+"    cnoreabbrev <expr> csf
+"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs find' : 'csf')
+"    cnoreabbrev <expr> csk
+"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs kill' : 'csk')
+"    cnoreabbrev <expr> csr
+"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs reset' : 'csr')
+"    cnoreabbrev <expr> css
+"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs show' : 'css')
+"    cnoreabbrev <expr> csh
+"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs help' : 'csh')
+"
+"
+"    let $VIMSRC='/home/christian/code/vim'
+"    command! -nargs=0 Cscope cs add $VIMSRC/src/cscope.out $VIMSRC/src
 endif
 
 if has('persistent_undo')
     set undofile
+    set undodir=~/.vim/undo/
 endif
 
 " Add ellipsis … to the digraphs
-" this overwrite the default, but my current font won't display that 
+" this overwrite the default, but my current font won't display that
 " letter anyway ;)
 digraphs .3 8230
+digraphs -- 8212
+digraphs \|- 166
 
 if &encoding == "utf-8"
 "    set listchars=eol:$,trail:·,tab:>>·,extends:>,precedes:<
     "set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
-     exec "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026"
+     exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026"
+     exe "set fillchars=vert:\u2502,fold:\u2500,diff:\u2014"
 else
 " Special characters that will be shown, when set list is on
     set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
@@ -409,6 +415,9 @@ endif
 "---------------------------------------------
 " Insert external vim sources
 "---------------------------------------------
+" This script contains plugin specific settings
+source ~/.vim/plugins.vim
+" This script contains mappings
 source ~/.vim/mapping.vim
 " The next script is not needed anymore, since I am now using
 " vimspell: http://www.vim.org/scripts/script.php?script_id=465
@@ -418,9 +427,6 @@ source ~/.vim/functions.vim
 source ~/.vim/boxquotes.vim
 " For abbreviations read in the following file:
 source ~/.vim/abbrev.vim
-
-" 2html setting:
-let html_whole_filler=1
 
 " source matchit
 ru macros/matchit.vim
@@ -439,6 +445,14 @@ if exists("##SwapExists")
     autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
 endif
 
+" open file at last position
+" :h last-position-jump
+au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"zvzz" | endif
+
+
+finish
+" DISABLED:
+if 0
 " use bracketed paste mode for xterm/screen
 " also see http://ttssh2.sourceforge.jp/manual/en/usage/tips/vim.html
 " does this work also with urxvt?
@@ -457,12 +471,7 @@ if &term =~ "xterm"
     cnoremap <special> <Esc>[200~ <nop>
     cnoremap <special> <Esc>[201~ <nop>
 endif
-
-
-" Make CSApprox shut up
-let g:CSApprox_verbose_level=0
-
-finish
+endif
 
 " Disabled, cause seems to brake something.
 " used for bracketed paste mode
@@ -474,31 +483,3 @@ elseif !exists("$TERMINATOR_UUID")
     let &t_SI .= "\e[3 q"
     let &t_EI .= "\e[1 q"
 endif
-
-"div {
-"    blook-is:	    red;
-"    some-color:	    #d13632;
-"    next-color:	    #e2571e;
-"    other-color:    #ec883a;
-"    hey-color:	    #e69333;
-"    vim-does-it:    #d6a525 #cdb923;
-"    rgb-is-ok:	    rgb(209, 210, 44);
-"    rgba-is-ok:	    rgba(209, 210, 44, 90);
-"    even-string:    yellow;
-"    for-what:	    #96bf33, #666, #fff;
-"    for-css:	    #479e1b;
-"    it-s-good:	    rgb(29, 60 %, 76), rgb(50, 50%, 126);
-"    once-again:	    #1d829e;
-"    yup:	    #503fa9 #8a2aa7;
-"    rainbow:	    #a8225f;
-"    are:	    #c83964;
-"    beautiful:	    #d33264;
-"    final:	    black, white;
-"    hsl-red:	    hsl(0,100%,50%)
-"    lime:	    hsla(120,100%,50%,1)
-"    lightgreen:     hsl(120, 100%, 75%)
-"    Hexcode-with_:  #abcdee_
-"    steelblue :
-"}
-
-

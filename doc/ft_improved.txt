@@ -1,13 +1,12 @@
 *ft_improved.txt* - Better f/t command for Vim
 
 Author:  Christian Brabandt <cb@256bit.org>
-Version: 0.4 Sun, 09 Sep 2012 14:13:31 +0200
+Version: 0.7 Wed, 14 Aug 2013 22:33:14 +0200
 
-Copyright: (c) 2009, 2010, 2011, 2012 by Christian Brabandt
+Copyright: (c) 2009-2013 by Christian Brabandt
            The VIM LICENSE applies to improved_ft.vim and improved_ft.txt
            (see |copyright|) except use improved_ft instead of "Vim".
            NO WARRANTY, EXPRESS OR IMPLIED.  USE AT-YOUR-OWN-RISK.
-
 
 ==============================================================================
 1. Contents                                                  *improvedft-ft*
@@ -17,6 +16,8 @@ Copyright: (c) 2009, 2010, 2011, 2012 by Christian Brabandt
         2.1   Enable...................................: |improvedft-Enable|
         2.2   Disable..................................: |improvedft-Disable|
         2.3   Tips.....................................: |improvedft-Tips|
+        2.3.1 Using the YankRing.......................: |improvedft-YankRing|
+        2.3.2 Ignoring case............................: |improvedft-ignorecase|
         2.4   Bugs.....................................: |improvedft-Bugs|
         3.  Feedback...................................: |improvedft-feedback|
         4.  History....................................: |improvedft-history|
@@ -53,11 +54,12 @@ If for any reason, you want to disable the plugin, use >
     :DisableImprovedFT
 <
 
-2.3 Tips                                             *improvedft-Tips*
+2.3 Tips                                                  *improvedft-Tips*
 --------
+                                                        *improvedft-YankRing*
 
-YankRing and the improved ft plugin
------------------------------------
+2.3.1 YankRing and the improved ft plugin
+------------------------------------------
 
 Both plugins map the ',', ';', 'f', 'F', 't' and 'T' key, so they don't work
 together very well. The improved ft plugin tries to work around that by
@@ -80,12 +82,50 @@ and removes the ',', ';', 'f', 'F', 't' and 'T' from them.
 The drawback of doing this is, that the YankRing possibly doesn't immediately
 catch up in the YankRing itself and possibly will not be caught at all.
 
+                                                    *improvedft-ignorecase*
+2.3.2 Ignoring case when searching
+----------------------------------
+
+ft_improved tries to mimic the existing behaviour of the |f| |F| |t| |T| |,| |;|
+commands as closely as possible. However, you might wish to search for the
+character while ignoring case, so that fT will also jump to either the next
+'t' or 'T' character, whichever appears first.
+
+To enable this, simply set this variable in your |.vimrc| >
+
+    :let g:ft_improved_ignorecase = 1
+<
+
+To disable either |unlet| that variable, or set it to zero.
+
+                                                    *improvedft-multichars*
+2.3.3 Searching for more characters
+-----------------------------------
+
+ft_improved tries to mimic the existing behaviour of the |f| |F| |t| |T| |,| |;|
+commands as closely as possible. However, you might wish to search for more
+character to better find your position and not only allow one single char with
+it.
+
+To enable this, simply set this variable in your |.vimrc| >
+
+    :let g:ft_improved_multichars = 1
+<
+As you type, the matching positions will be highlighted.
+
+To disable either |unlet| that variable, or set it to zero.
+
+If you have enabled it this way, you need to press enter, after having entered
+the characters to search for, so that the plugin knows, when not to wait for more
+characters and to start searching. Alternatively, if the entered characters
+precisely only match one position in the current screen (excluding folds), it
+will simply drop you there.
+
+Note: This is highly experimental and basically turns your |f| |F| |t| |T| |,|
+|;| keys to use a literal search function.
 
 2.4 Bugs                                             *improvedft-Bugs*
 --------
-
-- The plugin sets the search register (so 'hls' triggers incorrectly)
-  (probably needs a rewrite without using expression-mappings)
 
 - When using T as operator and the match is the last character of a previous
   line, the motion will become inclusive and you will incorrectly also change
@@ -107,6 +147,22 @@ third line of this document.
 
 ==============================================================================
 4. History                                              *improvedft-history*
+
+0.8: (unreleased) "{{{1
+- handle keys like <Enter>, <Tab> literally
+
+0.7: Aug 14, 2013 "{{{1
+- small bugfixes
+- correctly handle ignorecase setting |improvedft-ignorecase|
+- escape '
+- make ; work correctly when using backwards motion.
+
+0.6: Mar 16, 2013 "{{{1
+- |improvedft-multichars|
+- save and restore search-history in all modes correctly
+
+0.5: Feb 16, 2013 "{{{1
+- ignorecase when searching, when g:ft_improved_ignorecase is set
 
 0.4: Sep 09, 2012 "{{{1
 - special handling of pattern / and ?
