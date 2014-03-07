@@ -9,3 +9,4 @@ autoload/*
 bundle/*
 undo_recover/*
 .cache/*
+**/tags
