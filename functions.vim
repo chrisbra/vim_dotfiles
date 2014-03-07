@@ -2,7 +2,7 @@
 " Vim Functions from 
 " Christian Brabandt cb@256bit.org
 "
-" Last update: Sa 2012-12-08 13:36
+" Last update: Fr 2014-03-07 13:10
 " 
 "-------------------------------------------------------
 
@@ -369,23 +369,6 @@ endfunction
 "au VimEnter,BufRead,BufNew * call setbufvar(str2nr(expand('<abuf>')),
 "                    \ 'tstart', reltime())
 "augroup END
-
-" vim ab Version 7.2 unterstüzt floating point.
-"if version >= 702
-"    fu! TimeSpentEditing()
-"        let secs=round(1000*str2float(reltimestr(reltime(b:tstart))))/1000
-"        let hours=floor(secs/3600)
-"        let minutes=floor((secs-hours*3600)/60)
-"        let seconds=secs-hours*3600-minutes*60
-"        return printf("%0.0f:%02.0f:%06.3f",hours,minutes,seconds)
-"        return 0
-"    endf
-
-"    com! TimeSpentEditing echo TimeSpentEditing()
-"    map <silent> <leader>dt :TimeSpentEditing<CR>
-"endif
-"augroup TimeSpentEditing
-"
 
 function! GDigraph(arg)
     let old=@a

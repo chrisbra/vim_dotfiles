@@ -1,0 +1,1 @@
+echomsg "normal colors sourced"

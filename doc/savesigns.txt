@@ -1,0 +1,73 @@
+*savesigns.txt*  Plugin to save Signs
+
+Author:  Christian Brabandt <cb@256bit.org>
+Version: 0.5 Mon, 19 Aug 2013 22:00:35 +0200
+							    *savesigns-copyright*
+Copyright: (c) 2009, 2010 by Christian Brabandt 
+	The VIM LICENSE applies to savesigns.vim, savesignsPlugin.vim
+	and savesigns.txt (see |copyright|) except use savesigns instead
+	of "Vim".
+	NO WARRANTY, EXPRESS OR IMPLIED.  USE AT-YOUR-OWN-RISK.
+
+{only available when compiled with the |+signs| feature}
+
+==============================================================================
+1. Contents						    *savesigns-contents*
+
+1. Contents................................................|savesigns-contents|
+2. Functionality...........................................|savesigns-plugin|
+2.1   :SaveSigns...........................................|:SaveSigns|
+3. History.................................................|savesigns-history|
+
+==============================================================================
+							    *savesigns-plugin*
+2. Functionality
+
+This plugin was written to allow you to save your |signs| easily. Signs can be
+used to specific highlight certains rows in a buffer. This might be useful
+when using a debugger or display a |mark|. Note however, that this works only
+when the signs feature has been compiled into your vim.
+
+If you have defined signs in your file, you might want to save these signs to
+be able to reload these signs later on (e.g. with a |Session|). Therefore this
+plugin defines the |:SaveSigns| command, which will store all defined signs in
+a file in such a way that reloading that file will restore all defined signs.
+
+When saving Signs, the plugin creates a Vim Script, that can be read in using
+|:source| It will save Sign Definitions (see |:sign-define|), Sign placements
+(see |:sign-place|) and the Sign hilighting (see |hl-SignColumn|).
+
+Since signs are usually associated with a buffer or a file, sourcing this file
+using |:source| will only restore those signs whose buffers are loaded in that
+vim session. Note: All Signs that were defined before reloading this file will
+be lost.
+
+2.1 :SaveSigns							*:SaveSigns*
+
+:SaveSigns		Store all currently defined signs in a temporary file.
+			This file will be opened in a new split window and you
+			can edit it further. Note: This file won't be saved.
+			You need to explicitly save it.
+
+:SaveSigns[!] {name}	Store all currently defined signs in a file called
+			{name}. If this file exists, it won't be used a new
+			temporary file will be created. Use ! to force storing
+			the info in that file. This will however erase the
+			file {name}. So use with caution.
+
+
+==============================================================================
+							    *savesigns-history*
+3. savesigns History
+
+0.4	- use the blackhole register for deleting the buffer content
+	- install target did not work
+	- Deleted spell modeline
+0.3     - Enabled GLVS (see :h GLVS)
+0.2     - Uploaded to http://www.vim.org/
+        - Created autoload script
+        - Created documentation
+        - added some more error handling.
+0.1     - First initial version
+==============================================================================
+vim:tw=78:ts=8:ft=help

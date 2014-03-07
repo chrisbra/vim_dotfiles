@@ -11,10 +11,10 @@
 " though, implementation differs.
 
 " Plugin folklore "{{{2
-if v:version < 700 || exists('b:did_csv_ftplugin')
+if v:version < 700 || exists('b:did_ftplugin')
   finish
 endif
-let b:did_csv_ftplugin = 1
+let b:did_ftplugin = 1
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -137,6 +137,7 @@ fu! <sid>Init(startline, endline) "{{{3
         \ . "| unlet! b:csv_SplitWindow b:csv_headerline"
         \ . "| unlet! b:csv_thousands_sep b:csv_decimal_sep"
         \. " | unlet! b:browsefilter b:csv_cmt"
+        \. " | unlet! b:csv_arrange_leftalign"
 
  " Delete all functions
  " disabled currently, because otherwise when switching ft
@@ -1270,8 +1271,8 @@ fu! <sid>SumColumn(list) "{{{3
             if empty(item)
                 continue
             endif
-            let nr = matchstr(item, '\d\(.*\d\)\?$')
-            let format1 = '^\d\+\zs\V' . s:nr_format[0] . '\m\ze\d'
+            let nr = matchstr(item, '-\?\d\(.*\d\)\?$')
+            let format1 = '^-\?\d\+\zs\V' . s:nr_format[0] . '\m\ze\d'
             let format2 = '\d\+\zs\V' . s:nr_format[1] . '\m\ze\d'
             try
                 let nr = substitute(nr, format1, '', '')
@@ -2380,11 +2381,12 @@ fu! <sid>SubstituteInColumn(command, line1, line2) range "{{{3
 endfu
 
 fu! <sid>ColumnMode() "{{{3
-    if mode() =~# 'R'
+    let mode = mode()
+    if mode =~# 'R' || 1
         " (virtual) Replace mode
         let new_line = (line('.') == line('$') ||
-        \ (synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name") !~# "comment"))
-        return "\<ESC>". (new_line ? "o" : "JE".mode())
+        \ (synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name") =~? "csvcomment"))
+        return "\<ESC>g`[". (new_line ? "o" : "J".mode)
     else
         return "\<CR>"
     endif
@@ -2399,7 +2401,7 @@ fu! csv#EvalColumn(nr, func, first, last) range "{{{3
     endif
     let save = winsaveview()
     call <sid>CheckHeaderLine()
-    let nr = matchstr(a:nr, '^\d\+')
+    let nr = matchstr(a:nr, '^\-\?\d\+')
     let col = (empty(nr) ? <sid>WColumn() : nr)
     " don't take the header line into consideration
     let start = a:first - 1 + s:csv_fold_headerline

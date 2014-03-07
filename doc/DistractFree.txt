@@ -1,0 +1,213 @@
+*DistractFree.txt*   A plugin for WriteRoom like Editing with Vim
+
+Author:     Christian Brabandt <cb@256bit.org>
+Version:    0.5 Wed, 14 Aug 2013 22:36:39 +0200
+Copyright:  (c) 2009, 2010, 2011, 2012 by Christian Brabandt         
+            The VIM LICENSE applies to DistractFree.txt
+            (see |copyright|) except use DistractFree instead of "Vim".
+            NO WARRANTY, EXPRESS OR IMPLIED.  USE AT-YOUR-OWN-RISK.
+
+
+==============================================================================
+Contents                                                        *DistractFree*
+==============================================================================
+
+        1.  DistractFree Manual.................|DistractFree-manual|
+        2.  Configuration.......................|DistractFree-config|
+                2.1 Window size.................|DistractFree-size|
+                2.2 Set Colorscheme.............|DistractFree-Colorscheme|
+                2.3 Remap keys..................|DistractFree-maps|
+                2.4 Hooks.......................|DistractFree-hooks|
+                2.5 Options.....................|DistractFree-options|
+        3.  DistractFree Feedback...............|DistractFree-feedback|
+        4.  DistractFree History................|DistractFree-history|
+
+=================================================================================
+1. DistractFree Manual                                       *DistractFree-manual*
+=================================================================================
+
+Functionality
+
+This plugin has been made to enable a WriteRoom like behaviour in Vim.
+
+When enabled, all unnecessary features are turned off, so you can concentrate
+on writing with Vim. It also creates on each side a couple of empty windows,
+so that the text will be centered around the screen.
+
+This plugin defines the following commands:
+
+:DistractFreeToggle
+
+This commnd toggles between normal Vim mode and the distraction free mode.
+
+Alternatively, you can use the key <leader>W in normal mode to toggle between normal
+mode and Distraction Free mode. (If you haven't setup your leaderkey, see also
+|<Leader>| use the '\' key)
+
+==================================================================================
+2 DistractFree Configuration                                   *DistractFree-config*
+==================================================================================
+
+2.1 Window width/height                                      *DistractFree-size*
+-----------------------
+
+By default, DistractFree create a frame around the main window, such that the
+main buffer contains 90% of the available Vim window screen size. You can
+change this, by specifying either a percentage or width (in columns) by
+setting the g:distractfree_width variable, e.g. to have the window be resized
+to 95% of the Vim window, put into your |.vimrc| the following: >
+
+    :let g:distractfree_width = '95%'
+<
+
+2.2 Load a specific colorscheme                    *DistractFree-Colorscheme*
+-------------------------------
+
+By default, DistractFree does not change your colorscheme, although it comes
+with an experimental Darkroom like colorscheme, called "darkroom".
+
+DistractFree also does reset some highlighting colors, specifically it resets
+|hl-VertSplit| and |hl-NonText|. You might however want to load a specific
+colorscheme so that the highlighting distracts you even more. Therefore you
+can set the variable g:distractfree_colorscheme to your prefered colorscheme,
+which will then be loaded when starting distraction free mode like this >
+
+        :let g:distractfree_colorscheme = "solarized"
+
+This would make DistractFree try to load the specified colorscheme solarized
+when entering distraction free mode. If you don't want to change your
+colorscheme, simply set this variable to empty: >
+
+        :let g:distractfree_colorscheme = ""
+
+2.3 Remap keys                                *DistractFree-maps*
+--------------
+
+DistractFree remaps some keys, to make scrolling more easier. By default the
+following keys are mapped: >
+                            
+    ┌───────┬─────────────────┐
+    │  Key  │        Mapped To│
+    ├───────┼─────────────────┤
+    │   <Up>│            g<Up>│
+    │ <Down>│          g<Down>│
+    │      k│               gk│
+    │      j│               gj│
+    │ <Down>│   <C-\><C-O><Up>│
+    │ <Down>│ <C-\><C-O><Down>│
+    └───────┴─────────────────┘
+
+If you prefer to have no keys being remaped, that the variable
+g:distractfree_nomap_keys like this: >
+
+    :let g:distractfree_nomap_keys = 1
+<
+
+2.4 Hooks                                             *DistractFree-hooks*
+----------
+
+If you want, you can execute certain scripts, whenever Distraction free mode
+is started and stopped. For example, on Windows you might want to start
+Distraction free mode in transparent mode using VimTweak
+(http://www.vim.org/scripts/script.php?script_id=687). So to setup everything
+on start, you set the variable g:distractfree_hook variable like this: >
+
+    let g:distractfree_hook = {}
+    let g:distractfree_hook.start = 'call libcallnr("vimtweak.dll", "SetAlpha", 210) |'. 
+        \ 'call libcallnr("vimtweak.dll", "EnableMaximize", 1)  |'.
+        \ 'call libcallnr("vimtweak.dll", "EnableCaption", 0)   |'.
+        \ 'call libcallnr("vimtweak.dll", "EnableTopMost", 1) '
+
+    let g:distractfree_hook.stop = 'call libcallnr("vimtweak.dll", "SetAlpha", 255) |'.
+        \ 'call libcallnr("vimtweak.dll", "EnableMaximize", 0)  |'.
+        \ 'call libcallnr("vimtweak.dll", "EnableCaption", 1)   |'.
+        \ 'call libcallnr("vimtweak.dll", "EnableTopMost", 0)   |'
+
+This setups a start hook, that will be executed on Distraction Free Mode start
+(using the "start" key) and stop mode (using the "stop" key).
+
+2.5 Options                                             *DistractFree-options*
+------------
+By default, DistractFree, resets several options, when entering distract free
+mode. The following options will be set:
+
+Option              Value
+------              -----
+cursorcolumn:       off
+cursorline:         off
+fillchars:          vert:|
+guioptions:         empty
+laststatus:         0
+linebreak:          on
+number:             off
+relativenumber:     off
+ruler:              off
+scrolloff:          999
+showtabline:        off
+statusline:         empty
+t_mr:               empty
+textwidth:          width of window
+wrap:               off
+
+If you don't want a particular option to be remapped, that the option
+g:distractfree_keep_options to the option name. For example to keep the number
+option and the wrap option to their current values, set: >
+
+    :let g:distractfree_keep_options = 'number,wrap'
+
+<
+==============================================================================
+3. DistractFree Feedback                                 *DistractFree-feedback*
+==============================================================================
+
+Feedback is always welcome. If you like the plugin, please rate it at the
+vim-page: http://www.vim.org/scripts/script.php?script_id=4357
+
+You can also follow the development of the plugin at github:
+http://github.com/chrisbra/DistractFree
+
+Bugs can also be reported there:
+https://github.com/chrisbra/DistractFree/issues
+
+Alternatively, you can also report any bugs to the maintainer, mentioned in the
+third line of this document. Please don't hesitate to contact me, I won't bite
+;)
+
+If you like the plugin, write me an email (look in the third line for my mail
+address). And if you are really happy, vote for the plugin and consider
+looking at my Amazon whishlist: http://www.amazon.de/wishlist/2BKAHE8J7Z6UW
+
+==============================================================================
+4. DistractFree History                                   *DistractFree-history*
+==============================================================================
+
+0.6: (unreleased) {{{1
+- make sure, Normal highlight group is set correctly (#4, reported by atomixz,
+  thanks!)
+- have the user control resetting the options (partly #5, reported by atomixz,
+  thanks!, see :h DistractFree-options)
+0.5: Aug 14, 2013 {{{1
+- updated documentation by Ingo Karkat, Thanks!, issue #1
+- Make State of plugin avaivable to extern (patch by Ingo Karkat, Thanks!,
+  issue #2)
+- Ensure, padding of 'stl' works correctly (patch by Ingo Karkat, Thanks!,
+  issue #3)
+- :q in DistractMode quits vim correctly
+- Save/Restore User highlighting
+
+0.4: Feb 16, 2013 {{{1
+- set/restore guifont
+- updated colorscheme
+- remove font attribute from Normal highlighting
+- make current window the only window
+0.3: Dec 15, 2012 {{{1
+- enable |:GLVS|
+0.2: Dec 14, 2012 {{{1
+- upload to vim.org
+0.1: Dec 14, 2012 {{{1
+- first internal version
+  }}}
+
+==============================================================================
+Modeline:
+vim:tw=78:ts=8:ft=help:et:fdm=marker:fdl=0:norl

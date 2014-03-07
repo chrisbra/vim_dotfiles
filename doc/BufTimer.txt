@@ -1,0 +1,114 @@
+*BufTimer.txt*	Tracks Time Spent in Each Buffer - Vers 1.0	Aug 03, 2008
+
+Author: Bill McCarthy <WJMc at pobox dot com> ~
+
+Copyright: (c) 2008 by Bill McCarthy			*BufTimer-Copyright*
+           The VIM LICENSE applies to BufTimer.vim
+           (see |copyright|) except use "BufTimer" instead of "Vim"
+	   No warranty, express or implied.  Use At-Your-Own-Risk.
+
+
+Marc Fourier raised the question of tracking time spent editing with Vim in
+the mailing list.  Soon after, Ben Schmidt produced several versions of a
+solution using an external tool and the strftime function.  Because strftime
+wasn't working for me in Windows, I modified Ben's work to use the reltime
+function.  Later, a comment from Christian Brabandt asked about "stopping the
+clock" while not in a buffer.
+
+
+==============================================================================
+QUICK START						*BufTimer-Quickstart*
+
+
+Functionality:
+
+Autocmds are used to keep track of the last time you entered a buffer (stored
+in b:timeStart) and the accumulated time in a buffer before it was last
+entered (stored in b:timeAccum).  These two variables are unique for each
+buffer.
+
+The time spent in the current buffer is displayed with|:BufTimer|or a mapping
+of your choice (the default is <leader>dt).  If you have Vim version 7.0 or
+later, you can use|:BufTimerReport|or a mapping (the default is <leader>dr) to
+produce a report of the time spent in each buffer.  The report is controlled
+by the global|g:btrOpt|variable.
+
+Requirements:
+
+You must have have the autocmd facility enabled and be running in non-
+compatible mode to use this plugin.  The report facility requires at least
+Vim version 7.0 (lists are used).
+
+Instructions:
+
+Just source the VBA to install.  There are two commands and two mappings
+provided (one of each if you don't have Vim version 7.0 or later).
+
+==============================================================================
+COMMANDS						*BufTimer-Commands*
+
+There are only two commands available for a user interface.
+
+==============================================================================
+BufTimer							*:BufTimer*
+
+This command shows the elapse time that you have spent in the current buffer.
+It is displayed in the format h:mm:ss.  Floating point arithmetic is used if
+you are running Vim version 7.2 or later.  This tracks time spend even if you
+flip between buffers.  Earlier versions use integer calculations truncated to
+the second.  Although integer arithmetic isn't as accurate, it is sufficient
+to the purpose.
+
+==============================================================================
+BufTimeReport						    *:BufTimerReport*
+
+This command will list the time spent in each of the buffers you have defined
+in the|g:btrOpt|variable.  Because this plugin uses list first introduced in
+Vim version 7.0, this feature is not available in earler versions.  A sample
+report is shown below:
+
+	-----Existing Buffers-----
+	Buf  hh:mm:ss  Buffer Name
+	---  --------  -----------
+	  1   0:14:11  BufTimer.vim
+	  2   0:00:48  eval.txt
+	  3   0:13:32  BufTimer.txt
+	---  --------
+	Tot   0:28:31
+
+==============================================================================
+Report Option (Vim version 7.0 or later)			*g:btrOpt*
+
+The report is controlled by the|g:btrOpt|variable.  If you have not set this
+variable in your _vimrc file, it is set to zero.  Only the following values
+have meaning:
+
+	Value	Meaning
+
+	  0	Show times for all existing buffers (default)
+	  1	Show times for only loaded buffers
+	  2	Show times for only listed buffers
+
+==============================================================================
+Mappings for BufTimer					*Mappings-BufTimer*
+
+The mappings in the plugin can be overwritten by placing a small section in
+your _vimrc file.  An example follows:
+
+	nmap <unique> <leader>dt <Plug>BTmap
+	if v:version >= 700
+	    nmap <unique> <leader>dr <Plug>BTRmap
+	    let|g:btrOpt|= 0
+	endif
+
+where <leader>dt and <leader>dr can be replaced with you choice of mapping and
+you can set|g:btrOpt|for your choice of report option.
+
+==============================================================================
+BufReport Tool History					*BufReport-History*
+
+	v1 : Aug 03, 2008 : Initial release
+
+==============================================================================
+
+ vim:tabstop=8:textwidth=78:filetype=help:norightleft

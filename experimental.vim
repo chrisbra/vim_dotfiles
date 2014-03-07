@@ -1,16 +1,19 @@
-hi User1 term=standout ctermfg=0 ctermbg=11 guifg=Black guibg=Yellow
-function! MySTL()
-    if has("statusline")
-	let stl='%-3.3n %f %{exists("b:mod")?("[".b:mod."]") : ""} %h%m%r%w[%{strlen(&ft)?&ft:"none"},%{(&fenc==""?&enc:&fenc)},%{&fileformat}%{(&bomb?",BOM":"")}]%=%-10.(%l,%c%V%) %p%%'
-	if exists("*CSV_WCol")
-	    let csv = '%1*%{&ft=~"csv" ? CSV_WCol("Name") . " " . CSV_WCol() : ""}%*'
-	else
-	    let csv = ''
-	endif
-	return stl.csv
-    endif
-endfunc
-set stl=%!MySTL()
+if 0
+  " using airline for a nice fancy statusline
+  hi User1 term=standout ctermfg=0 ctermbg=11 guifg=Black guibg=Yellow
+  function! MySTL()
+      if has("statusline")
+	  let stl='%-3.3n %f %{exists("b:mod")?("[".b:mod."]") : ""} %h%m%r%w[%{strlen(&ft)?&ft:"none"},%{(&fenc==""?&enc:&fenc)},%{&fileformat}%{(&bomb?",BOM":"")}]%=%-10.(%l,%c%V%) %p%%'
+	  if exists("*CSV_WCol")
+	      let csv = '%1*%{&ft=~"csv" ? CSV_WCol("Name") . " " . CSV_WCol() : ""}%*'
+	  else
+	      let csv = ''
+	  endif
+	  return stl.csv
+      endif
+  endfunc
+  set stl=%!MySTL()
+endif
 
 "au TabLeave * :let g:last_tab=tabpagenr()
 

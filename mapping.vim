@@ -2,7 +2,7 @@
 " Vim Setting for Mappings
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Do 2013-08-01 13:29
+" Last update: Fr 2014-03-07 13:08
 
 "-------------------------------------------------------
 " Useful mappings
@@ -37,24 +37,6 @@ au BufWinEnter *.txt if(&ft =~ 'help')| nmap <buffer> <CR> <C-]> |endif
 " is intended to be a shell prompt and needs to be $) and insert the 
 " output in the buffer
 nmap ,e ^wy$:r!<cword><CR>
-
-" for editing a file with other users, this will insert my name and 
-" the date, when I edited
-" map ,cb ochrisbra, :r!LC_ALL='' date<CR>kJo-
-" nmap ,cb ochrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
-"nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
-
-" Plugin: NERD_commenter.vim
-" (see: http://www.vim.org/scripts/script.php?script_id=1218)
-" Allows to comment lines in different languages
-" Comment current line
-"nmap ,co ,cc
-" uncoment current line
-"nmap ,uco ,cu
-" toggle comment current line
-"nmap ,tco ,c<space>
-" Do not yiel about unknown filetypes.
-"let NERDShutUp=1
 
 " map the DiffOrig command to  <leader>do
 " HINT: *d*iff with *o*riginal file
@@ -144,6 +126,3 @@ xnoremap # :<C-U>call <sid>VSetSearch('?')<CR>/<C-R>?<C-R>=@/<CR><CR>
 "                   registers / all registers (that typically contain
 "                   pasteable text).
 nnoremap <silent> <expr> "" ':<C-u>registers ' . (v:register ==# '"' ? (v:count ? strpart('abcdefghijklmnopqrstuvwxyz', 0, v:count1) : '"0123456789abcdefghijklmnopqrstuvwxyz*+.') : v:register) . "<CR>"
-
-" Notations
-"<C-M> == <CR>

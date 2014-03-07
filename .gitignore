@@ -4,3 +4,8 @@
 .netrwhist
 GetLatest/*
 undo/*
+plugins/*
+autoload/*
+bundle/*
+undo_recover/*
+.cache/*

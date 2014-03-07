@@ -1,0 +1,36 @@
+*explainpat.txt*    Give detailed help on a regexp pattern.
+
+		    For Vim version 7.0.  Last change: 2012 Dec 19
+		    By Andy Wokula <anwoku@yahoo.de>
+
+						*explainpat* *explainpat.vim*
+When you want to inspect a given Vim regexp pattern, this script might save
+you lots of help lookups.  And it will make the structure of a regexp visible.
+And it helps spotting mistakes.
+
+If you find that it explains something wrong, drop me an email.
+
+==============================================================================
+						*:ExplainPattern*
+:ExplainPattern [{pattern} | {register}]
+			parse the given Vim {pattern} and print a line of help
+			(with color) for each found pattern item.  Nested
+			items get extra indent.
+
+			A single-char argument is used as {register} argument:
+				/	explain the last search pattern
+				*	explain pattern from the clipboard
+				a	explain pattern from register a
+
+Notes:
+The pattern is first converted into a purely magic pattern using
+|nwo#magic#MakeMagic()|.  This means that embedded |\V| |\M| |\m| |\V|
+specifiers are effectively removed from the explanation.
+
+:ExplainPattern also accepts some invalid patterns: >
+	:ExplainPattern \)
+	Pattern: \)
+	\)         end of group
+
+==============================================================================
+vim:tw=78:fo=tcq2:sts=0:ts=8:sw=8:fdm=marker:fmr=^_\^,^\^:ft=help:

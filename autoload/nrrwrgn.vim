@@ -182,7 +182,8 @@ fun! <sid>WriteNrrwRgn(...) "{{{1
 		endif
 	else
 		call <sid>StoreLastNrrwRgn(nrrw_instn)
-		let winnr = bufwinnr(b:orig_buf)
+		" b:orig_buf might not exists (see issue #2)
+		let winnr = (exists("b:orig_buf") ? bufwinnr(b:orig_buf) : 0)
 		" Best guess
 		if bufname('') =~# 'Narrow_Region' && winnr > 0
 			exe ':noa'. winnr. 'wincmd w'
@@ -223,6 +224,55 @@ fun! <sid>SaveRestoreRegister(values) "{{{1
 	endif
 endfun!
 
+fun! <sid>UpdateOrigWin() abort
+	if !get(g:, 'nrrw_rgn_update_orig_win', 0)
+		return
+	endif
+	if bufname('') !~# 'Narrow_Region'
+		return
+	else
+		let instn = b:nrrw_instn
+	endif
+	if !has_key(s:nrrw_rgn_lines[instn], 'multi')
+		return
+	endif
+	if exists("b:orig_buf") && (bufwinnr(b:orig_buf) == -1) &&
+		\ !<sid>BufInTab(b:orig_buf) &&
+		\ !bufexists(b:orig_buf)
+		" Buffer does not exists anymore (shouldn't happen)
+		return
+	endif
+	let cur_win = winnr()
+	try
+		if !exists("b:nrrw_rgn_prev_pos")
+			let b:nrrw_rgn_prev_pos = getpos(".")
+		endif
+		if b:nrrw_rgn_prev_pos[0] == line('.')
+			return
+		endif
+		" Try to update the original window
+		let start = search(' Start NrrwRgn\d\+', 'bcWn')
+		if start == 0
+			" not found
+			return
+		endif
+		let region = matchstr(getline(start),
+			\ ' Start NrrwRgn\zs\d\+\ze')+0
+		let offset = line('.') - start
+		exe ":noa" bufwinnr(b:orig_buf). 'wincmd w'
+		let pos = s:nrrw_rgn_lines[instn].multi[region]
+		if pos[0] + offset > pos[1]
+			" safety check
+			let offset = pos[1] - pos[0]
+		endif
+		call cursor(pos[0]+offset, pos[1])
+		redraw
+	finally
+		exe ":noa" cur_win "wincmd w"
+		let b:nrrw_rgn_prev_pos = getpos(".")
+	endtry
+endfun!
+
 fun! <sid>NrrwRgnAuCmd(instn) "{{{1
 	" If a:instn==0, then enable auto commands
 	" else disable auto commands for a:instn
@@ -232,6 +282,7 @@ fun! <sid>NrrwRgnAuCmd(instn) "{{{1
 			au BufWriteCmd <buffer> nested :call s:WriteNrrwRgn(1)
 			au BufWinLeave,BufWipeout,BufDelete <buffer> nested
 						\ :call s:WriteNrrwRgn()
+			au CursorMoved <buffer> :call s:UpdateOrigWin()
 		aug end
 	else
 		exe "aug NrrwRgn".  a:instn
@@ -329,7 +380,7 @@ fun! <sid>GeneratePattern(startl, endl, mode, ...) "{{{1
 	" This is just a best guess, the highlighted block could still be wrong
 	" (a " rectangle has been selected, but the complete lines are
 	" highlighted
-	if a:mode ==# '' && a:startl[1] > 0 && a:startl[1] > 0 && block
+	if a:mode ==# '' && a:startl[0] > 0 && a:startl[1] > 0 && block
 		return '\%>'. (a:startl[0]-1). 'l\&\%>'. (a:startl[1]-1).
 			\ 'v\&\%<'. (a:endl[0]+1). 'l'
 	elseif a:mode ==# '' && a:startl[0] > 0 && a:startl[1] > 0
@@ -477,18 +528,18 @@ fun! <sid>DeleteMatches(instn) "{{{1
 endfun
 
 fun! <sid>HideNrrwRgnLines() "{{{1
-	let cnc = has("Conceal")
-	let cmd='syn match NrrwRgnStart "^# Start NrrwRgn\d\+$" '.
-				\ (cnc ? 'conceal' : '')
+	let char1 = <sid>ReturnComments()[0]
+	let char1 = escape(char1, '"\\')
+	let cmd='syn match NrrwRgnStart "^'.char1.' Start NrrwRgn\d\+$"'
 	exe cmd
-	let cmd='syn match NrrwRgnEnd "^# End NrrwRgn\d\+$" '.
-				\ (cnc ? 'conceal' : '')
+	let cmd='syn match NrrwRgnEnd "^'.char1.' End NrrwRgn\d\+$"'
 	exe cmd
-	syn region NrrwRgn start="^# Start NrrwRgn\z(\d\+\).*$"
-		\ end="^# End NrrwRgn\z1$" fold transparent
-	if cnc
-		setl conceallevel=3
-	endif
+	exe 'syn region NrrwRgn '.
+		\ ' start="^\ze'. char1.' Start NrrwRgn"'.
+		\ '  skip="'.char1.' Start NrrwRgn\(\d\+\)\_.\{-}End NrrwRgn\1$"'.
+		\ '   end="^$" fold transparent'
+	hi default link NrrwRgnStart Comment
+	hi default link NrrwRgnEnd Comment
 	setl fdm=syntax
 endfun
 
@@ -904,7 +955,7 @@ fun! nrrwrgn#WidenRegion(force)  "{{{1
 	if (orig_win == -1)
 		if bufexists(orig_buf)
 			" buffer not in current window, switch to it!
-			exe winnr "wincmd w"
+			exe "noa" winnr "wincmd w"
 			exe "noa" orig_buf "b!"
 			" Make sure highlighting will be removed
 			let close = (&g:hid ? 0 : 1)
@@ -1106,7 +1157,7 @@ fun! nrrwrgn#UnifiedDiff() "{{{1
 			.+,$NR
 		endif
 	   " Split vertically
-	   wincmd H
+	   noa wincmd H
 	   if i==0
 		   silent! g/^-/d _
 	   else

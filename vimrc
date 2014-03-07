@@ -2,7 +2,7 @@
 " Global .vimrc Settings from
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Do 2013-10-24 08:42
+" Last update: Fr 2014-03-07 13:29
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "
@@ -13,6 +13,7 @@
 
 " set Unicode if possible
 " First, check that the necessary capabilities are compiled-in
+" needs to be set first
 if has("multi_byte")
         " (optional) remember the locale set by the OS
         let g:locale_encoding = &encoding
@@ -41,13 +42,16 @@ if !empty(glob('$HOME/.vim/autoload/pathogen.vim'))
     call pathogen#infect()
     call pathogen#helptags()
 endif
-" ~/local/share/vim/vim73 should contains the newest runtime files
 " Always have ~/.vim at first position.
-"set rtp-=~/.vim
-"set rtp^=/home/chrisbra/local/share/vim/vim73/
 set rtp^=~/.vim
 " allow switching of buffers without having to save them
 set hidden
+
+" Set the tags file (default is ok)
+"set tags=~/tags
+
+" Enable file modelines (default is ok)
+" set modelines=5
 
 " when joining, prevent inserting an extra space before a .?!
 set nojoinspaces
@@ -55,26 +59,12 @@ set nojoinspaces
 " vi compatible, set $ to line end, when chaning text
 set cpo+=$
 
+" prefer a dark background (important to get the colorscheme right)
+set bg=dark
+
 " Turn on filetype detection plugin and indent for specific
 if exists(":filetype") == 2
     filetype plugin indent on
-endif
-
-" Always turn syntax highlighting on
-if has("syntax")
-    syntax on
-    " Matching of IP-Addresses Highlight in yellow
-    highlight ipaddr term=bold ctermfg=yellow guifg=yellow
-    " highlight ipaddr ctermbg=green guibg=green
-    match ipaddr /\<\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\>/
-    " highlight VCS conflict markers
-    match ErrorMsg /^\(<\|=\|>\)\{7\}\([^=].\+\)\?$/
-
-    hi def link WhiteSpaceError Error
-    match WhiteSpaceError /[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]/
-
-    " highlight all columns > 80 (max. 256 columns)
-    " let &colorcolumn=join(range(81,335), ',')
 endif
 
 " Tweak timeouts, because the default is too conservative
@@ -88,7 +78,6 @@ set ai ruler showmode showmatch wildmenu showcmd ls=2
 
 " Search options: ignore case, increment search, no highlight, smart case
 " nostartofline option
-"set ic incsearch nohlsearch smartcase nostartofline
 set incsearch nohlsearch smartcase nostartofline ignorecase
 
 " show partial lines
@@ -108,26 +97,48 @@ set diffopt+=horizontal
 lang mess C
 lang ctype C
 
+" how many entries in the commandline history to save
+set history=1000
+
 " Use of a .viminfo file
 "set viminfo=%,!,'50,\"100,:100
-set viminfo=!,'50,\"100,:100
+set viminfo=!,'50
 
 " Commandline Completion
 set wildmode=list:longest,longest:full
 
-" Enable file modelines
-set modelines=5
+if has("gui")
+    " Disable the gui (don't need menus, scrollbars, etc...)
+    set go=
+endif
 
-" Disable the gui:
-set go=
+" Always turn syntax highlighting on
+if has("syntax")
+    syntax on
+    " Matching of IP-Addresses Highlight in yellow
+    "highlight ipaddr term=bold ctermfg=yellow guifg=yellow
+    " highlight ipaddr ctermbg=green guibg=green
+    "match ipaddr /\<\(\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\.\)\{3\}\(25\_[0-5]\|2\_[0-4]\_[0-9]\|\_[01]\?\_[0-9]\_[0-9]\?\)\>/
+    " highlight VCS conflict markers
+    match ErrorMsg /^\(<\|=\|>\)\{7\}\([^=].\+\)\?$/
 
-" Format options: see :h fo-table
-" set fo=tcqrn
+    hi def link WhiteSpaceError Error
+    match WhiteSpaceError /[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]/
+
+    " highlight all columns > 80 (max. 256 columns)
+    " let &colorcolumn=join(range(81,335), ',')
+
+    " Make VertSplit take the same background as Normal
+    hi! link VertSplit Normal
+    if has("conceal")
+	hi! link Conceal Normal
+    endif
+endif
 
 " Tabstop options
 " one tab indents by 8 spaces (this is the default for most display utilities)
 " and so it will look like the same
-set ts=8
+"set ts=8
 " softtabstops make you feel, a tab is 4 spaces wide, instead the default
 " 8. This means display utilities will still see 8 character wide tabs,
 " while in vim, a tab looks like 4 characters
@@ -157,21 +168,17 @@ set nrformats=
 "---------------------------------------------
 " set dictionary. Press <CTRL>X <CTRL> K for looking up
 " use german words, see debian package `wngerman'
-" set dictionary=/usr/share/dict/ngerman
 set dictionary=/usr/share/dict/words
 
-"au FileType mail   so ~/.vim/mail.vim
-"au FileType tex    so ~/.vim/latex.vim
 if has("autocmd")
     au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
-    au BufNewFile,BufRead *.csv setf csv
 endif
 
 "-------------------------------------------------------
 " STATUSBAR
 " ------------------------------------------------------
 "  Disabled:
-"  The plugin Vim-Powerline makes an even better status line
+"  The plugin airline makes an even better status line
 if 0
     set laststatus=2
     if has("statusline")
@@ -187,7 +194,6 @@ if 0
 	set statusline+=%=                           " right align
 	"set statusline+=0x%-8B\                      " current char
 	set statusline+=%-10.(%l,%c%V%)\ %p%%        " offset
-	"set statusline=%<%f\ %h%m%r%=%k[%{(&fenc\ ==\ \"\"?&enc:&fenc).(&bomb?\",BOM\":\"\")}]\ %-12.(%l,%c%V%)\ %P
     endif
 endif
 
@@ -198,12 +204,6 @@ if ($OS =~"Windows")
     let g:netrw_scp_cmd="\"c:\\Program Files\\PuTTY\\pscp.exe\" -q -batch"
 endif
 
-"---------------------------------------------
-" This will highlight the line on which
-" a search pattern matches.
-"---------------------------------------------
-"au CursorHold * if getline('.') =~ @/ | exe 'match LineNr /\%' .  line(".") . 'l.*/' | else | match | endif
-"set updatetime=20
 "---------------------------------------------
 " Vim 7 Features
 "---------------------------------------------
@@ -225,27 +225,14 @@ if version >= 700
      highlight MatchParen term=reverse   ctermbg=7   guibg=cornsilk
 
     " What to display in the Tabline
-    set tabline=%!MyTabLine()
+    "set tabline=%!MyTabLine()
 
     " Define :E for opening a new file in a new tab
     command! -nargs=* -complete=file E :tabnew <args>
-else
-    " Mappings for Minibufexpl
-    " switch to next buffer
-    " nmap <C-j> :MBEbn<CR>
-    nmap Oc  :MBEbn<CR>
-    " switch to previous buffer
-    " nmap <C-k> :MBEbp<CR>
-    nmap Od  :MBEbp<CR>
 endif
 
-if version >= 600
-" Folding:
-" This works only with vim > 6
-    set foldenable
-    set foldmethod=marker
-    set foldlevelstart=0
-    "set foldcolumn=1
+if has("folding")
+    set foldenable foldmethod=marker foldlevelstart=0
 endif
 
 if (&term =~ '^screen')
@@ -256,15 +243,27 @@ if (&term =~ '^screen')
   "endif
   " set title for screen
   " VimTip #1126
-  " set t_ts=k t_fs=\\ title
-  set title
-  set t_ts=k
-  set t_fs=\
-  let &titleold = fnamemodify(&shell, ":t")
-  set titlelen=15
-  " set information for title in screen (see :h 'statusline')
-  set titlestring=%t%=%<%(\ %{&encoding},[%{&modified?'+':'-'}],%p%%%)
-  com! -complete=help -nargs=+ H :!screen -t 'Vim-help' vim -c 'help <args>' -c 'only'
+    set title
+    set t_ts=k
+    set t_fs=\
+    let &titleold = fnamemodify(&shell, ":t")
+    set titlelen=15
+    " set information for title in screen (see :h 'statusline')
+    set titlestring=%t%=%<%(\ %{&encoding},[%{&modified?'+':'-'}],%p%%%)
+    com! -complete=help -nargs=+ H :!screen -t 'Vim-help' vim -c 'help <args>' -c 'only'
+    " Make Vim recognize xterm escape sequences for Page and Arrow
+    " keys combined with modifiers such as Shift, Control, and Alt.
+    " See http://www.reddit.com/r/vim/comments/1a29vk/_/c8tze8p
+    " needs in tmux.conf: setw -g xterm-keys on
+    " Page keys http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/FAQ
+    execute "set t_kP=\e[5;*~"
+    execute "set t_kN=\e[6;*~"
+
+    " Arrow keys http://unix.stackexchange.com/a/34723
+    execute "set <xUp>=\e[1;*A"
+    execute "set <xDown>=\e[1;*B"
+    execute "set <xRight>=\e[1;*C"
+    execute "set <xLeft>=\e[1;*D"
 elseif (&term =~ 'putty\|xterm-256\|xterm-color\|xterm')
     " Let's have 256 Colors. That rocks!
     " Putty and screen are aware of 256 Colors on recent systems
@@ -280,70 +279,25 @@ if !empty(&t_ut)
     let &t_ut=''
 endif
 
-" Make Vim recognize xterm escape sequences for Page and Arrow
-" keys combined with modifiers such as Shift, Control, and Alt.
-" See http://www.reddit.com/r/vim/comments/1a29vk/_/c8tze8p
-" needs in tmux.conf: setw -g xterm-keys on
-if &term =~ '^screen'
-  " Page keys http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/FAQ
-  execute "set t_kP=\e[5;*~"
-  execute "set t_kN=\e[6;*~"
-
-  " Arrow keys http://unix.stackexchange.com/a/34723
-  execute "set <xUp>=\e[1;*A"
-  execute "set <xDown>=\e[1;*B"
-  execute "set <xRight>=\e[1;*C"
-  execute "set <xLeft>=\e[1;*D"
-endif
-
-" console vim has usually a dark background,
-" while in gvim I usually use a light background
-if has("gui_running")
-    set bg=light
-else
-    set bg=dark
-endif
-
 " Set a color scheme. I especially like
 " desert and darkblue
-if (&t_Co == 256) || (&t_Co == 88)
+if (&t_Co == 256) || (&t_Co == 88) || has("gui_running")
     "if exists("$COLORTERM") && expand("$COLORTERM") =~ "rxvt"
 	"set t_Co=88
 "	colorscheme elflord
 "    else
-	"colorscheme desert256
-	" Force dark background for zenburn
-	"let g:zenburn_force_dark_Background = 1
-	"colorscheme zenburn
-	let g:solarized_termcolors=256
-	colors solarized
-    "colorscheme desert
+    "colorscheme desert256
+    let g:solarized_termcolors=256
+    colors solarized
     " Highlight of Search items is broken in desert256
-    " so fix that
     "hi Search ctermfg=0 ctermbg=159
 "    endif
-elseif has("gui_running")
-    " dark background looks better
-    set bg=dark
-    colorscheme solarized
 else
     colorscheme desert
 endif
 
-if has("syntax")
-    " Make VertSplit take the same background as Normal
-    hi! link VertSplit Normal
-    if has("conceal")
-	hi! link Conceal Normal
-    endif
-endif
-
-
 " In Diff-Mode turn off Syntax highlighting
 if &diff | syntax off | endif
-
-" Set the tags file
-"set tags=~/tags
 
 if has('cscope')
   set cscopetag cscopeverbose
@@ -351,29 +305,6 @@ if has('cscope')
   if has('quickfix')
     set cscopequickfix=s-,c-,d-,i-,t-,e-
   endif
-
-"  cnoreabbrev csa cs add
-"  cnoreabbrev csf cs find
-"  cnoreabbrev csk cs kill
-"  cnoreabbrev csr cs reset
-"  cnoreabbrev css cs show
-"  cnoreabbrev csh cs help
-"    cnoreabbrev <expr> csa
-"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs add'  : 'csa')
-"    cnoreabbrev <expr> csf
-"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs find' : 'csf')
-"    cnoreabbrev <expr> csk
-"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs kill' : 'csk')
-"    cnoreabbrev <expr> csr
-"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs reset' : 'csr')
-"    cnoreabbrev <expr> css
-"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs show' : 'css')
-"    cnoreabbrev <expr> csh
-"          \ ((getcmdtype() == ':' && getcmdpos() <= 4)? 'cs help' : 'csh')
-"
-"
-"    let $VIMSRC='/home/christian/code/vim'
-"    command! -nargs=0 Cscope cs add $VIMSRC/src/cscope.out $VIMSRC/src
 endif
 
 if has('persistent_undo')
@@ -404,39 +335,25 @@ if expand("$TEST8COLORTERM")=='1'
     colors default
 endif
 
-" source local .vimrc
-" This is potentialy dangerous
-"fu! LocalVimrc()
-"   if  filereadable(expand("%:p:h")."/.vimrc")
-"       source %:p:h/.vimrc
-"   endif
-"endfu
-
-"---------------------------------------------
-" Insert external vim sources
-"---------------------------------------------
 " This script contains plugin specific settings
 source ~/.vim/plugins.vim
 " This script contains mappings
 source ~/.vim/mapping.vim
-" The next script is not needed anymore, since I am now using
-" vimspell: http://www.vim.org/scripts/script.php?script_id=465
-"source ~/.vim/spelling.vim
-source ~/.vim/functions.vim
-" Boxquotes
-source ~/.vim/boxquotes.vim
+"source ~/.vim/functions.vim
 " For abbreviations read in the following file:
-source ~/.vim/abbrev.vim
+"source ~/.vim/abbrev.vim
 
 " source matchit
 ru macros/matchit.vim
 
 " experimental and debug settings
 " (possibly not even available in vanilla vim)
-source ~/.vim/experimental.vim
+" source ~/.vim/experimental.vim
 
 " In case /tmp get's clean out, make a new tmp directory for vim:
-command! Mktmpdir call mkdir(fnamemodify(tempname(),":p:h"),"",0700)
+if has("user_commands")
+  command! Mktmpdir call mkdir(fnamemodify(tempname(),":p:h"),"",0700)
+endif
 
 " if ctag or cscope open a file that is already opened elsewhere, make sure to
 " open it in Read-Only Mode
