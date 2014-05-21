@@ -62,6 +62,10 @@ let g:CSApprox_verbose_level=0
 let g:changes_autocmd=1
 let g:changes_verbose=0
 let g:changes_vcs_check=1
+let g:changes_sign_text_utf8=1
+" disabled
+"let g:changes_loaded=1
+
 "let g:changes_diff_preview=1
 
 " CheckAttach:
@@ -69,6 +73,11 @@ let g:changes_vcs_check=1
 
 " SudoEdit:
 "let g:sudoDebug=1
+
+" Unicode:
+let g:enableUnicodeCompletion=1
+" slow:
+"let g:Unicode_ShowDigraphName = 1
 
 " Colorizer Plugin:
 let g:colorizer_auto_filetype="html,css"
@@ -100,6 +109,7 @@ let g:ft_improved_nohighlight = 0
 
 " DistractFree:
 let g:distractfree_colorscheme = "darkroom"
+"au BufEnter *.vim call DistractFree#DistractFreeToggle()
 
 " Replay:
 let g:replay_record = 1
@@ -113,8 +123,8 @@ let g:Powerline_loaded = 1
 let g:airline#extensions#tabline#enabled = 1
 " enable/disable detection of whitespace errors. >
 let g:airline#extensions#whitespace#enabled = 0
-let g:airline#extensions#tabline#buffer_nr_show = 1
-let g:airline#extensions#tabline#fnamemod = ':t:.'
+"let g:airline#extensions#tabline#buffer_nr_show = 1
+"let g:airline#extensions#tabline#fnamemod = ':t:.'
 if &encoding == "utf-8"
     let g:airline_symbols = {}
     " unicode symbols
@@ -191,6 +201,35 @@ let g:neocomplcache_omni_patterns.perl = '\h\w*->\h\w*\|\h\w*::'
 "let g:solarized_termcolors=256
 "colors solarized
 
+" Tmuxline Integration:
+let g:tmuxline_preset = {
+      \'a'    : '#S',
+      \'b'    : '#W',
+      \'c'    : '#H',
+      \'win'  : '#I #W',
+      \'cwin' : '#I #W',
+      \'x'    : '%a',
+      \'y'    : '#W %R',
+      \'z'    : '#H'}
+
+let g:tmuxline_preset = {
+      \'a'    : '#S',
+      \'c'    : ['#(whoami)', '#(uptime | cud -d " " -f 1,2,3)'],
+      \'win'  : ['#I', '#W'],
+      \'cwin' : ['#I', '#W', '#F'],
+      \'x'    : '#(date)',
+      \'y'    : ['%R', '%a', '%Y'],
+      \'z'    : '#H'}
+
+let g:tmuxline_preset = {
+      \'a'    : '#S',
+      \'win'  : ['#I', '#W'],
+      \'cwin' : ['#I', '#W', '#F'],
+      \'y'    : ['%R', '%a', '%Y'],
+      \'z'    : '#H'}
+
+let g:tmuxline_powerline_separators=0
+
 " Unite: {{{
 "call unite#filters#matcher_default#use(['matcher_fuzzy'])
 let g:unite_data_directory='~/.vim/.cache/unite'
@@ -250,7 +289,7 @@ nno <leader>A :<C-u>execute 'Unite grep:.::' . expand("<cword>") . ' -default-ac
 nno <leader>b :<C-u>Unite buffer -buffer-name=buffers -start-insert<CR>
 "nno <leader><leader> :<C-u>UniteWithCurrentDir buffer file -buffer-name=united -start-insert<CR>
 nno <leader>ps :<C-u>:Unite process -buffer-name=processes -start-insert<CR>
-nno <leader>u :<C-u>Unite<space>
+nno <leader>U :<C-u>Unite<space>
 ""nno <C-p> :<C-u>:Unite history/yank -buffer-name=yanks<CR>
 "nno // :<C-u>:Unite line -buffer-name=lines -start-insert -direction=botright -winheight=10<CR>
 " wimviki replacement {{{

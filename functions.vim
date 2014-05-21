@@ -2,7 +2,7 @@
 " Vim Functions from 
 " Christian Brabandt cb@256bit.org
 "
-" Last update: Fr 2014-03-07 13:10
+" Last update: Fr 2014-05-16 20:53
 " 
 "-------------------------------------------------------
 
@@ -95,16 +95,16 @@ fun! UpdateRcHeader()
 endfun
 
 " Meine Autocommands
-augroup configs
-    autocmd!
+"augroup configs
+    "autocmd!
      " Header von .vimrc und .bashrc automatisch updated
-     autocmd BufWritePre *vimrc  :call UpdateRcHeader()
-     autocmd BufWritePre *.vim  :call UpdateRcHeader()
-     autocmd BufWritePre *bashrc :call UpdateRcHeader()
-     autocmd BufWritePre */.mutt/* :call UpdateRcHeader()
-     autocmd BufWritePre muttrc :call UpdateRcHeader()
-     autocmd BufWritePre personal.vim :call UpdateRcHeader()
-augroup END
+     "autocmd BufWritePre *vimrc  :call UpdateRcHeader()
+     "autocmd BufWritePre *.vim  :call UpdateRcHeader()
+     "autocmd BufWritePre *bashrc :call UpdateRcHeader()
+     "autocmd BufWritePre */.mutt/* :call UpdateRcHeader()
+     "autocmd BufWritePre muttrc :call UpdateRcHeader()
+     "autocmd BufWritePre personal.vim :call UpdateRcHeader()
+"augroup END
 
 "-------------------------------------------------------
 " Tabbing

@@ -10,9 +10,11 @@ fu! CustomFoldText(string) "{{{1
     else
         let line = substitute(getline(fs), '\t', repeat(' ', &tabstop), 'g')
     endif
-    " remove foldmarker from line
     let pat  = matchstr(&l:cms, '^\V\.\{-}\ze%s\m')
-    let pat .= '\%('. pat. '\)\?\s*'. split(&l:fmr, ',')[0]. '\s*\d\+'
+    " remove leading comments from line
+    let line = substitute(line, '^\s*'.pat.'\s*', '', '')
+    " remove foldmarker from line
+    let pat  = '\%('. pat. '\)\?\s*'. split(&l:fmr, ',')[0]. '\s*\d\+'
     let line = substitute(line, pat, '', '')
 
 "   let line = substitute(line, matchstr(&l:cms,

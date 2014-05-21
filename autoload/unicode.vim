@@ -1,28 +1,23 @@
 " unicodePlugin : A completion plugin for Unicode glyphs
 " Author: C.Brabandt <cb@256bit.org>
-" Version: 0.17
-" Copyright: (c) 2009 by Christian Brabandt
+" Version: 0.19
+" Copyright: (c) 2009-2014 by Christian Brabandt
 "            The VIM LICENSE applies to unicode.vim, and unicode.txt
 "            (see |copyright|) except use "unicode" instead of "Vim".
 "            No warranty, express or implied.
 "  *** ***   Use At-Your-Own-Risk!   *** ***
-"
-" GetLatestVimScripts: 2822 17 :AutoInstall: unicode.vim
-
+" GetLatestVimScripts: 2822 19 :AutoInstall: unicode.vim
 " ---------------------------------------------------------------------
 
+" initialize Variables {{{1
+let s:unicode_URL  = get(g:, 'Unicode_URL',
+        \ 'http://www.unicode.org/Public/UNIDATA/UnicodeData.txt')
+let s:directory    = expand("<sfile>:p:h")."/unicode"
+let s:UniFile      = s:directory . '/UnicodeData.txt'
+" patch 7.3.713 introduced the %S modifier for printf
+let s:printf_S_mod = (v:version == 703 && !has("patch713")) || v:version < 703
 
-if exists("g:unicode_URL")
-    let s:unicode_URL=g:unicode_URL
-else
-    "let s:unicode_URL='http://www.unicode.org/Public/UNIDATA/Index.txt'
-    let s:unicode_URL='http://www.unicode.org/Public/UNIDATA/UnicodeData.txt'
-endif
-if !exists("g:UnicodeShowPreviewWindow")
-    let g:UnicodeShowPreviewWindow = 0
-endif
-
-" HTML entitities
+" HTML entitities {{{2
 let s:html = {}
 let s:html[0x0022] = "&quot;"
 let s:html[0x0026] = "&amp;"
@@ -281,353 +276,50 @@ let s:html[0x25CA] = "&loz;"
 let s:html[0x2660] = "&spades;"
 let s:html[0x2663] = "&clubs;"
 let s:html[0x2665] = "&hearts;"
-let s:html[0x2666] = "&diams;"
-
-
-let s:file=matchstr(s:unicode_URL, '[^/]*$')
-
-let s:directory  = expand("<sfile>:p:h")."/unicode"
-let s:UniFile    = s:directory . '/UnicodeData.txt'
-
-fu! unicode#CompleteUnicode(findstart,base) "{{{1
-  if !exists("s:numeric")
-      let s:numeric=0
-  endif
-  if a:findstart
-    let line = getline('.')
-    let start = col('.') - 1
-    while start > 0 && line[start - 1] =~ '\w\|+'
-      let start -= 1
-    endwhile
-    if line[start] =~# 'U' && line[start+1] == '+' && col('.')-1 >=start+2
-        let s:numeric=1
-    else
-        let s:numeric=0
-    endif
-    return start
-  else
-    if exists("g:showDigraphCode")
-        let s:showDigraphCode=g:showDigraphCode
-    else
-        let s:showDigraphCode = 0
-    endif
-    if s:numeric
-        let complete_list = filter(copy(s:UniDict),
-            \ 'printf("%04X", v:val) =~? "^0*".a:base[2:]')
-    else
-        let complete_list = filter(copy(s:UniDict), 'v:key =~? a:base')
-    endif
-    for [key, value] in sort(items(complete_list), "<sid>CompareList")
-        "let key=matchstr(key, "^[^0-9 ]*")
-        let dg_char=<sid>GetDigraphChars(value)
-        if s:showDigraphCode
-            if !empty(dg_char)
-                let fstring = printf("U+%04X %s (%s):'%s'", value, key, dg_char,
-                    \ nr2char(value))
-            else
-                let fstring=printf("U+%04X %s:%s", value, key, nr2char(value))
-            endif
-        else
-            let fstring=printf("U+%04X %s:'%s'", value, key, nr2char(value))
-        endif
-        let istring = printf("U+%04X %s%s:'%s'", value, key,
-            \ empty(dg_char) ? '' : '('.dg_char.')', nr2char(value))
-    
-        if s:unicode_complete_name
-            let dict = {'word':key, 'abbr':fstring}
-            if g:UnicodeShowPreviewWindow
-                call extend(dict, {'info': istring})
-            endif
-            call complete_add(dict)
-        else
-            let dict = {'word':nr2char(value), 'abbr':fstring}
-            if g:UnicodeShowPreviewWindow
-                call extend(dict, {'info': istring})
-            endif
-            call complete_add(dict)
-        endif
-        if complete_check()
-            break
-        endif
-    endfor
-
-    return {}
-  endif
+let s:html[0x2666] = "&diams;" "}}}2
+" public functions {{{1
+fu! unicode#FindDigraphBy(match) "{{{2
+    return <sid>DigraphsInternal(a:match)
 endfu
-
-fu! unicode#CompleteDigraph() "{{{1
-    let prevchar=getline('.')[col('.')-2]
-    let prevchar1=getline('.')[col('.')-3]
-    let dlist=<sid>GetDigraph()
-    if prevchar !~ '\s' && !empty(prevchar)
-        let filter1 =  '( v:val[0] == prevchar1 && v:val[1] == prevchar)'
-        let filter2 = 'v:val[0] == prevchar || v:val[1] == prevchar'
-
-        let dlist1 = filter(copy(dlist), filter1)
-        if empty(dlist1)
-            let dlist = filter(dlist, filter2)
-            let col=col('.')-1
-        else
-            let dlist = dlist1
-            let col=col('.')-2
-        endif
-        unlet dlist1
-    else
-        let col=col('.')
-    endif
-    let tlist=[]
-    for args in dlist
-        let t=matchlist(args, '^\(..\)\s<\?\(..\?\)>\?\s\+\(\d\+\)$')
-        if !empty(t)
-            let format=printf("'%s' %s U+%04X",t[1], t[2], t[3])
-            call add(tlist, {'word':nr2char(t[3]), 'abbr':format,
-                \ 'info': printf("Abbrev\tGlyph\tCodepoint\n%s\t%s\tU+%04X",
-                \ t[1],t[2],t[3])})
-       endif
-    endfor
-    call complete(col, tlist)
-    return ''
+fu! unicode#FindUnicodeBy(match) "{{{2
+    return <sid>FindUnicodeByInternal(a:match)
 endfu
-
-fu! unicode#SwapCompletion() "{{{1
-    if !exists('s:unicode_complete_name')
-        let s:unicode_complete_name = 1
+fu! unicode#Digraph(char1, char2) "{{{2
+    if empty(a:char1) || empty(a:char2)
+        return ''
     endif
-    if exists('g:unicode_complete_name')
-        let s:unicode_complete_name = g:unicode_complete_name
-    else
-        let s:unicode_complete_name = !s:unicode_complete_name
+    let s=''
+    " How about a digrpah() function?
+    " already sent a patch to Bram
+    exe "sil! norm! :let s.='\<c-k>".a:char1.a:char2."'\<cr>"
+    if s == a:char1
+        return ''
     endif
-    echo "Unicode Completion Names " .
-    \ (s:unicode_complete_name ? 'ON':'OFF')
+    return (s ==# a:char1 ? '' : s)
 endfu
-
-fu! unicode#Init(enable) "{{{1
-    if !exists("s:unicode_complete_name")
-        let s:unicode_complete_name = 0
-    endif
-    if a:enable
-        let b:oldfunc=&l:cfu
-        if (<sid>CheckDir())
-            let s:UniDict = <sid>UnicodeDict()
-            setl completefunc=unicode#CompleteUnicode
-            set completeopt+=menuone
-            inoremap <C-X><C-G> <C-R>=unicode#CompleteDigraph()<CR>
-            nnoremap <leader>un :call unicode#SwapCompletion()<CR>
-        endif
-    else
-        if exists("b:oldfunc") && !empty(b:oldfunc)
-            let &l:cfu=b:oldfunc
-        else
-            setl completefunc=
-        endif
-        unlet! s:UniDict
-        if maparg("<leader>un", 'n')
-            nunmap <leader>un
-        endif
-        if maparg("<C-X><C-G>")
-            iunmap <C-X><C-G>
-        endif
-    endif
-    echo "Unicode Completion " . (a:enable? 'ON' : 'OFF')
+fu! unicode#UnicodeName(val) "{{{2
+    return <sid>GetUnicodeName(a:val)
 endfu
-
-fu! unicode#GetUniChar(...) "{{{1
-    try
-        if (<sid>CheckDir())
-            if !exists("s:UniDict")
-                let s:UniDict=<sid>UnicodeDict()
-            endif
-            let msg = []
-
-        " Get glyph at Cursor
-        " need to use redir, cause we also want to capture combining chars
-            redir => a | exe "silent norm! ga" | redir end 
-            let a = substitute(a, '\n', '', 'g')
-            " Special case: no character under cursor
-            if a == 'NUL'
-                call add(msg, "'NUL' U+0000 NULL")
-                "call add(msg, "No character under cursor!")
-                return
-            endif
-            let dlist = <sid>GetDigraph()
-            " Split string, in case cursor was on a combining char
-            for item in split(a, 'Octal \d\+\zs \?')
-
-                let glyph = substitute(item, '^<\(<\?[^>]*>\?\)>.*', '\1', '')
-                let dec   = substitute(item, '.*>\?> \+\(\d\+\),.*', '\1', '')
-                " Check for control char (has no name)
-                if dec <= 0x1F || ( dec >= 0x7F && dec <= 0x9F)
-                    if dec == 0
-                        let dec = 10
-                    endif
-                    let dig = filter(copy(dlist), 'v:val =~ ''\D''.dec.''$''')
-                    call add(msg, printf("'%s' U+%04X <Control Char> %s", glyph, dec,
-                            \ empty(dig) ? '' : '('.dig[0][0:1].')'))
-                " CJK Unigraphs start at U+4E00 and go until U+9FFF
-                elseif dec >= 0x4E00 && dec <= 0x9FFF
-                    call add(msg, printf("'%s' U+%04X CJK Ideograph", glyph, dec))
-                elseif dec >= 0xF0000 && dec <= 0xFFFFD
-                    call add(msg, printf("'%s' U+%04X character from Plane 15 for private use",
-                    \ glyph, dec))
-                elseif dec >= 0x100000 && dec <= 0x10FFFD
-                    call add(msg, printf("'%s' U+%04X character from Plane 16 for private use",
-                \ glyph, dec))
-                else
-                    let dict = filter(copy(s:UniDict), 'v:val == dec')
-                    if empty(dict)
-                    " not found
-                        call add(msg, printf("Character '%s' U+%04X not found", glyph, dec))
-                        return
-                    endif
-                    let dig = filter(copy(dlist), 'v:val =~ ''\D''.dec.''$''')
-                    if !empty(dig)
-                        let dchar = printf("(%s)", dig[0][0:1])
-                    else
-                        let dchar = ''
-                    endif
-                    let html = <sid>GetHtmlEntity(dec)
-                    call add(msg, printf("'%s' U+%04X %s %s %s", glyph, values(dict)[0],
-                    \ keys(dict)[0], dchar, html))
-                endif
-            endfor
-            if exists("a:1") && !empty(a:1)
-                exe "let @".a:1. "=join(msg)"
-            endif
-
-            "call <sid>OutputMessage(msg)
-        else
-            call add(msg, printf("Can't determine char under cursor, %s not found", s:UniFile))
-        endif
-    finally
-        call <sid>OutputMessage(msg)
-    endtry
-endfun
-
-fu! unicode#OutputDigraphs(match, bang) "{{{1
-    let screenwidth = 0
-    let digit = a:match + 0
-    for dig in sort(<sid>GetDigraph(), '<sid>CompareDigraphs')
-        " display digraphs that match value
-        if dig !~# a:match && digit == 0
-            continue
-        endif
-        let item = matchlist(dig, '\(..\)\s\(\%(\s\s\)\|.\{,4\}\)\s\+\(\d\+\)$')
-
-        " if digit matches, we only want to display digraphs matching the
-        " decimal values
-        if digit > 0 && digit !~ item[3]
-            continue
-        endif
-
-        let screenwidth += strdisplaywidth(dig) + 2
-
-        " if the output is too wide, echo an output
-        if screenwidth > &columns || !empty(a:bang)
-            let screenwidth = 0
-            echon "\n"
-        endif
-
-        echohl Title
-        echon item[2]
-        echohl Normal
-        echon item[1]. " ". item[3] . " "
-    endfor
-endfu
-
-fu! unicode#GetDigraph(type, ...) "{{{1
-    let sel_save = &selection
-    let &selection = "inclusive"
-    let _a = [getreg("a"), getregtype("a")]
-    let start = ''
-
-    if a:0  " Invoked from Visual mode, use '< and '> marks.
-        silent exe "norm! `<" . a:type . '`>"ay'
-        if col('$') == col("'>")
-            let start.="\n"
-        endif
-    elseif a:type == 'line'
-        silent exe "norm! '[V']\"ay"
-    elseif a:type == 'block'
-        silent exe "norm! `[\<C-V>`]\"ay"
-    else
-        silent exe "normal! `[v`]\"ay"
-    endif
-
-    let s = ''
-    while !empty(@a)
-        " need to check the next 2 characters
-        for i in range(2)
-            let char{i} = matchstr(@a, '^.')
-            if char2nr(char{i}) > 126 || char2nr(char{i}) < 20
-                let s.=char0. (exists("char1") ? "char1" : "")
-                let @a=substitute(@a, '^.', '', '')
-                break
-            endif
-            let @a=substitute(@a, '^.', '', '')
-            if empty(@a)
-                break
-            endif
-        endfor
-        if exists("char0") && exists("char1")
-            " How about a digraph() function?
-            " e.g. :let s.=digraph(char[0], char[1])
-            exe "sil! norm! :let s.='\<c-k>".char0.char1."'\<cr>"
-        endif
-        unlet! char0 char1
-    endw
-
-    if s != @a
-        let @a = start.s
-        exe "norm! gv\"ap"
-        if start == "\n"
-            exe "norm! j$"
-        endif
-    endif
-
-    let &selection = sel_save
-    call call("setreg", ["a"]+_a)
-endfu
-
-fu! <sid>GetDigraphChars(code) "{{{1
-    let dlist = <sid>GetDigraph()
-    let ddict = {}
-    for digraph in dlist
-        let key=matchstr(digraph, '\d\+$')+0
-        let val=split(digraph)
-        let ddict[key] = val[0]
-    endfor
-    return get(ddict, a:code, '')
-endfu
-
-fu! <sid>UnicodeDict() "{{{1
-    let dict={}
-    let list=readfile(s:UniFile)
-    for glyph in list
-    let val          = split(glyph, ";")
-    let Name         = val[1]
-    let dict[Name]   = str2nr(val[0],16)
-    endfor
-    return dict
-endfu
-
-fu! <sid>CheckUniFile(force) "{{{1
+fu! unicode#Download(force) "{{{2
     if (!filereadable(s:UniFile) || (getfsize(s:UniFile) == 0)) || a:force
         call s:WarningMsg("File " . s:UniFile . " does not exist or is zero.")
         call s:WarningMsg("Let's see, if we can download it.")
         call s:WarningMsg("If this doesn't work, you should download ")
         call s:WarningMsg(s:unicode_URL . " and save it as " . s:UniFile)
         sleep 10
+        if filereadable(s:directory. '/UnicodeData.vim')
+            call delete(s:directory. '/UnicodeData.vim')
+        endif
         if exists(":Nread")
             sp +enew
-            " Use the default download method. You can specify a different one,
-            " using :let g:netrw_http_cmd="wget"
+            " Use the default download method. You can specify a different
+            " one, using :let g:netrw_http_cmd="wget"
             exe ":lcd " . s:directory
             exe "0Nread " . s:unicode_URL
             $d _
-            exe ":w!" . s:UniFile
+            exe ":noa :keepalt :sil w! " . s:UniFile
             if getfsize(s:UniFile)==0
-                call s:WarningMsg("Error fetching Unicode File from " . s:unicode_URL)
+                call s:WarningMsg("Error fetching File from ". s:unicode_URL)
                 return 0
             endif
             bw
@@ -640,8 +332,433 @@ fu! <sid>CheckUniFile(force) "{{{1
     endif
     return 1
 endfu
+" internal functions {{{1
+fu! unicode#CompleteUnicode() "{{{2
+    " Completion function for Unicode characters
+    let numeric=0
+    if !exists("s:UniDict")
+        let s:UniDict=<sid>UnicodeDict()
+    endif
+    let line = getline('.')
+    let start = col('.') - 1
+    let prev_fmt="Char\tCodepoint  Digraph\tName\n%s\tU+%04X\t  %s\t\t%s"
+    while start > 0 && line[start - 1] =~ '\w\|+'
+        let start -= 1
+    endwhile
+    if line[start] =~# 'U' && line[start+1] == '+' && col('.')-1 >=start+2
+        let numeric=1
+    endif
+    let base = line[start : (col('.')-1)]
+    if empty(base)
+        let complete_list = s:UniDict
+        echom '(Checking all Unicode Names... this might be slow)'
+    else
+        if numeric
+            let complete_list = filter(copy(s:UniDict),
+                \ 'printf("%04X", v:key) =~? "^0*".base[2:]')
+        else
+            let complete_list = filter(copy(s:UniDict), 'v:val =~? base')
+        endif
+        echom printf('(Checking Unicode Names for "%s"... this might be slow)', base)
+    endif
+    let compl = <sid>AddCompleteEntries(complete_list)
+    call complete(start+1, compl)
+    return ""
+endfu
+fu! unicode#CompleteDigraph() "{{{2
+    " Completion function for digraphs
+    let prevchar=getline('.')[col('.')-2]
+    let prevchar1=getline('.')[col('.')-3]
+    let dlist=values(<sid>GetDigraphDict())
+    if !exists("s:UniDict")
+        let s:UniDict=<sid>UnicodeDict()
+    endif
+    if prevchar !~ '\s' && !empty(prevchar)
+        let filter1 = printf("match(v:val, '%s%s')>-1",  prevchar1, prevchar)
+        let filter2 = printf('match(v:val, ''%s\|%s'')>-1', prevchar1, prevchar)
+        let dlist1  = filter(copy(dlist), filter1)
+        if empty(dlist1)
+            let dlist = filter(dlist, filter2)
+            let col=col('.')-1
+        else
+            let dlist = dlist1
+            let col=col('.') - (empty(prevchar1) ? 1 : 2)
+        endif
+        unlet dlist1
+    else
+        let col=col('.')
+    endif
+    let tlist=<sid>AddDigraphCompleteEntries(dlist)
+    call complete(col, tlist)
+    return ''
+endfu
+fu! unicode#GetUniChar(...) "{{{2
+    " Return Unicode Name of Character under cursor
+    " :UnicodeName
+    if exists("a:1") && !empty(a:1) && (len(a:1)>1 || a:1 !~# '[a-zA-Z0-9]')
+        call <sid>WarningMsg("No valid register specified")
+        return
+    endif
+    let msg        = []
+    try
+        if !exists("s:UniDict")
+            let s:UniDict=<sid>UnicodeDict()
+            if empty(s:UniDict)
+                call add(msg,
+                    \ printf("Can't determine char under cursor,".
+                    \ "%s not found", s:UniFile))
+                return
+            endif
+        endif
+        " Get char at Cursor, need to use redir, cause we also want
+        " to capture combining chars
+        redir => a | exe "silent norm! ga" | redir end 
+        let a = substitute(a, '\n', '', 'g')
+        " Special case: no character under cursor
+        if a == 'NUL'
+            call add(msg, "'NUL' U+0000 NULL")
+        else
+            " Split string, in case cursor was on a combining char
+            for item in split(a, 'Octal \d\+\zs \?')
+                let glyph = substitute(item, '^<\(<\?[^>]*>\?\)>.*', '\1', '')
+                let dec   = substitute(item, '.*>\?> \+\(\d\+\),.*', '\1', '')
+                let dig   = <sid>GetDigraphChars(dec)
+                let name  = <sid>GetUnicodeName(dec)
+                let html  = <sid>GetHtmlEntity(dec)
+                call add(msg, printf("'%s' U+%04X Dec:%d %s %s %s", glyph,
+                        \ dec, dec, name, dig, html))
+            endfor
+        endif
+        if exists("a:1") && !empty(a:1)
+            exe "let @".a:1. "=join(msg)"
+        endif
+    finally
+        let start      = 1
+        let s:output_width=1
+        for val in msg
+            let l=split(val)
+            call <sid>ScreenOutput(l[0], ' '.join(l[1:]))
+            " force linebreak
+            let s:output_width=&columns
+            let start = 0
+        endfor
+    endtry
+endfun
+fu! unicode#PrintDigraphs(match, bang) "{{{2
+    " outputs only first digraph that exists for char
+    " makes a difference for e.g. Euro which has (=e Eu)
+    let digraphs = <sid>DigraphsInternal(a:match)
+    let s:output_width=1
 
-fu! <sid>CheckDir() "{{{1
+    for item in digraphs
+        " remove paranthesis
+        let item.dig = substitute(item.dig, '^.\|.$', '', 'g')
+        call <sid>ScreenOutput(item.glyph, printf(' %s %s ', item.dig, item.dec))
+        if !empty(a:bang)
+            " force linebreak
+            let s:output_width=&columns
+        endif
+    endfor
+endfu
+fu! unicode#PrintUnicode(match) "{{{2
+    let uni    = <sid>FindUnicodeByInternal(a:match)
+    let format = ["% 4S\t", "U+%04X Dec:%06d\t", ' %s']
+    if s:printf_S_mod
+        let format[0] = substitute(format[0], 'S', 's', '')
+    endif
+    let s:output_width = 1
+    for item in uni
+        let dig  = get(item, 'dig' , '')
+        let html = get(item, 'html', '')
+        call <sid>ScreenOutput(printf(format[0], item.glyph),
+                \ printf(format[1].format[2], item.dec, item.dec, item.name),
+                \ (empty(dig)  ? [] : printf(" %s", dig)),
+                \ (empty(html) ? [] : printf(" %s", html)))
+        let s:output_width = &columns
+    endfor
+endfu
+fu! unicode#GetDigraph(type, ...) "{{{2
+    " turns a movement or selection into digraphs, each pair of chars
+    " will be converted into the belonging digraph, e.g: This line:
+    " a:e:o:u:1Sß/\
+    " will be converted into:
+    " äëöü¹ß×
+    let sel_save = &selection
+    let &selection = "inclusive"
+    let _a = [getreg("a"), getregtype("a")]
+
+    if a:0  " Invoked from Visual mode, use '< and '> marks.
+        silent exe "norm! `<" . a:type . '`>"ay'
+    elseif a:type == 'line'
+        silent exe "norm! '[V']\"ay"
+    elseif a:type == 'block'
+        silent exe "norm! `[\<C-V>`]\"ay"
+    else
+        silent exe "normal! `[v`]\"ay"
+    endif
+ 
+    let s = ''
+    while !empty(@a)
+        " need to check the next 2 characters
+        for i in range(2)
+            let char{i} = matchstr(@a, '^.')
+            if char2nr(char{i}) > 126 || char2nr(char{i}) < 20 || char2nr(char{i}) == 0x20
+                let s.=char0. (exists("char1") ? "char1" : "")
+                let @a=substitute(@a, '^.', '', '')
+                break
+            endif
+            let @a=substitute(@a, '^.', '', '')
+            if empty(@a)
+                break
+            endif
+        endfor
+        if exists("char0") && exists("char1")
+            " How about a digraph() function?
+            " e.g. :let s.=digraph(char[0], char[1])
+            let s.=unicode#Digraph(char0, char1)
+        endif
+        unlet! char0 char1
+    endw
+
+    if s != @a
+        let @a = s
+        exe "norm! gv\"ap"
+    endif
+    let &selection = sel_save
+    call call("setreg", ["a"]+_a)
+endfu
+fu! unicode#PrintUnicodeTable() "{{{2
+    let winname = 'UnicodeTable'
+	let win = bufwinnr('^'.winname.'$')
+	if win != -1
+		exe win. 'wincmd w'
+	else
+        exe  'sp' winname
+    endif
+
+    " just in case, a global nomodifiable was set 
+    setl ma
+    " Just in case
+    silent %d _
+    " Set up some options 
+    setl noswapfile buftype=nofile foldcolumn=0 nobuflisted bufhidden=wipe nowrap
+    if !exists("s:UniDict")
+        let s:UniDict=<sid>UnicodeDict()
+    endif
+    call append(1, printf("%-7s%-8s%-10s%-57s%s",
+            \ "Char","Codept","Html", "Name (Digraph)", "Link"))
+    let output = []
+    for [value,name] in items(s:UniDict) " sort is done later, for performance reasons
+        let value  += 0
+        let dig     = <sid>GetDigraphChars(value)
+        let html    = <sid>GetHtmlEntity(value)
+        let codep   = printf('U+%04X', value)
+        let output += [printf("%-7s%-8s%-10s%-57shttp://unicode-table.com/en/%04X/",
+                    \ strtrans(nr2char(value)), codep, html, name.dig, value)]
+    endfor
+    call append('$', output)
+    3,$sort x /^.\{,8}U+/
+    :noa 1
+endfu
+fu! <sid>AddCompleteEntries(dict) "{{{2
+    let compl=[]
+    let prev_fmt="Glyph\tCodepoint\tName\n%s\tU+%04X\t\t%s"
+    let starttime = localtime()
+    for value in sort(keys(a:dict), '<sid>CompareListByDec')
+        if value==0
+            continue " Skip NULLs, does not display correctly
+        endif
+        let name = a:dict[value]
+        let dg_char=<sid>GetDigraphChars(value)
+        let fstring = printf("U+%04X %s%s:'%s'",
+                \ value, name, dg_char, nr2char(value))
+        if get(g:, 'Unicode_CompleteName',0)
+            let dict = {'word':printf("%s (U+%04X)", name, value), 'abbr':fstring}
+        else
+            let dict = {'word':nr2char(value), 'abbr':fstring}
+        endif
+        if get(g:,'Unicode_ShowPreviewWindow',0)
+            call extend(dict, {'info': printf(prev_fmt, nr2char(value),value,name)})
+        endif
+        call add(compl, dict)
+        " break too long running search
+        if localtime() - starttime > 5
+            echohl WarningMsg
+            echom "Completing takes too long, stopping now..."
+            echohl Normal
+            break
+        endif
+    endfor
+    return compl
+endfu
+fu! <sid>AddDigraphCompleteEntries(list) "{{{2
+    let list = []
+    for args in a:list
+        for item in args
+            let t=matchlist(item, '^\(..\)\s<\?\(..\?\)>\?\s\+\(\d\+\)$')
+            let prev_fmt="Abbrev\tGlyph\tCodepoint\tName\n%s\t%s\tU+%04X\t\t%s"
+            if !empty(t)
+                let name   = <sid>GetUnicodeName(t[3])
+                let format = printf("'%s' %s U+%04X %s",t[1], t[2], t[3],name)
+                if t[3] == 0 " special case: NULL
+                    let t[3] = 10
+                endif
+                " Dec key will be ignored by complete() function
+                call add(list, {'word':nr2char(t[3]), 'abbr':format, 'dec': t[3],
+                    \ 'info': printf(prev_fmt, t[1],t[2],t[3],name)})
+            endif
+        endfor
+    endfor
+    return sort(list, '<sid>CompareByDecimalKey')
+endfu
+fu! <sid>DigraphsInternal(match) "{{{2
+    let outlist = []
+    let digit = a:match + 0
+    let name = ''
+    let unidict = {}
+    let tchar = {}
+    if (len(a:match > 1 && digit == 0))
+        " try to match digest name from unicode name
+        if !exists("s:UniDict")
+            let s:UniDict = <sid>UnicodeDict()
+        endif
+        let name    = a:match
+        let unidict = filter(copy(s:UniDict), 'v:val =~? name')
+    endif
+    for dig in values(<sid>GetDigraphDict())
+        " display digraphs that match value
+        if dig[0] !~# a:match && digit == 0 && empty(unidict)
+            continue
+        endif
+        " digraph: xy Z \d\+
+        " (x and y are the letters to create the digraph)
+        let item = matchlist(dig[0],
+            \ '\(..\)\s\(\%(\s\s\)\|.\{,4\}\)\s\+\(\d\+\)$')
+        " if digit matches, we only want to display digraphs matching the
+        " decimal values
+        if (digit > 0 && item[3] !~ '^'.digit.'$') ||
+            \ (!empty(name) &&  match(keys(unidict), '^'.item[3].'$') == -1)
+            continue
+        endif
+
+        if !empty(name)
+            let tchar = filter(copy(unidict), 'v:key == item[3]')
+        endif
+
+        " add trailing  space for item[2] if there isn't one
+        " (e.g. needed for digraph 132)
+        if item[2] !~? '\s$' || item[3] == 32
+            let item[2].= ' '
+        endif
+
+        let dict       = {}
+        " Space is different
+        let dict.glyph = item[3] != 32 ? matchstr(item[2],'\s\?\S*\ze\s*$') : '  '
+        let dict.dig   = <sid>GetDigraphChars(item[3])
+        let dict.dec   = item[3]
+        let dict.hex   = printf("0x%02X", item[3])
+        let dict.name  = <sid>GetUnicodeName(item[3])
+        call add(outlist, dict)
+    endfor
+    return sort(outlist, '<sid>CompareByDecimalKey')
+endfu
+fu! <sid>FindUnicodeByInternal(match) "{{{2
+    let digit = a:match + 0
+    if a:match[0:1] == 'U+'
+        let digit = str2nr(a:match[2:], 16)
+    endif
+    let unidict = {}
+    let name = ''
+    let output = []
+    if !exists("s:UniDict")
+        let s:UniDict = <sid>UnicodeDict()
+    endif
+    if len(a:match) > 1 && digit == 0
+        " try to match digest name from unicode name
+        let name = a:match
+    endif
+    if (digit == 0 && empty(name))
+        echoerr "No argument was specified!"
+        return []
+    endif
+    if !empty(name)
+        let unidict = filter(copy(s:UniDict), 'v:val =~? name')
+    else
+        " filter for decimal value
+        let unidict = filter(copy(s:UniDict), 'v:key == digit')
+    endif
+    for decimal in keys(unidict)
+        " Try to get digraph char
+        let dchar=<sid>GetDigraphChars(decimal)
+        " Get html entity
+        let html          = <sid>GetHtmlEntity(decimal)
+        let dict          = {}
+        let dict.name     = s:UniDict[decimal]
+        let dict.glyph    = nr2char(decimal)
+        let dict.dec      = decimal
+        let dict.hex      = printf("0x%02X", decimal)
+        if !empty(dchar)
+            let dict.dig  = dchar
+        endif
+        if !empty(html)
+            let dict.html = html
+        endif
+        call add(output, dict)
+    endfor
+    return sort(output, '<sid>CompareByDecimalKey')
+endfu
+fu! <sid>Screenwidth(item) "{{{2
+    " Takes string arguments and calculates the width
+    if exists("*strdisplaywidth")
+        return strdisplaywidth(a:item)
+    else
+        " old vims doen't have strdisplaywidth function
+        " return number of chars (which might be wrong 
+        " for double width chars...)
+        return len(split(a:item, '\zs'))
+    endif
+endfu
+fu! <sid>GetDigraphChars(code) "{{{2
+    "returns digraph for given decimal value
+    if !exists("s:digdict")
+        call <sid>GetDigraphDict()
+    endif
+    if !has_key(s:digdict, a:code)
+        return ''
+    endif
+    let list=map(deepcopy(get(s:digdict, a:code, [])), 'v:val[0:1]')
+    return (empty(list) ? '' : '('. join(list). ')')
+endfu
+fu! <sid>UnicodeDict() "{{{2
+    let dict={}
+    " make sure unicodedata.txt is found
+    if <sid>CheckDir()
+        let uni_cache_file = s:directory. '/UnicodeData.vim'
+        if filereadable(uni_cache_file) &&
+            \ getftime(uni_cache_file) > getftime(s:UniFile) &&
+            \ getfsize(uni_cache_file) > 100 " Unicode Cache Dict should be a lot larger
+            exe "source" uni_cache_file
+            let dict=g:unicode#unicode#data
+            unlet! g:unicode#unicode#data
+        else
+            let list=readfile(s:UniFile)
+            let ind = []
+            for glyph in list
+                let val          = split(glyph, ";")
+                let Name         = val[1]
+                let OldName      = val[10] " Unicode_1_Name field (10)
+                if Name[0] ==? '<' && OldName !=? ''
+                    let Name = split(OldName, '(')[0]
+                endif
+                let dec = ('0x'.val[0])+0 " faster than str2nr()
+                let dict[dec]   = Name
+                let ind += [dec] " faster than add
+            endfor
+            call <sid>UnicodeWriteCache(dict, ind)
+    endif
+    return dict
+endfu
+fu! <sid>CheckDir() "{{{2
     try
         if (!isdirectory(s:directory))
             call mkdir(s:directory)
@@ -650,62 +767,69 @@ fu! <sid>CheckDir() "{{{1
         call s:WarningMsg("Error creating Directory: " . s:directory)
         return 0
     endtry
-    return <sid>CheckUniFile(0)
+    return unicode#Download(0)
 endfu
-
-fu! <sid>GetDigraph() "{{{1
-    if exists("s:dlist") && !empty(s:dlist)
-        return s:dlist
+fu! <sid>GetDigraphDict() "{{{2
+    " returns a dict of digraphs 
+    " as output by :digraphs
+    if exists("s:digdict") && !empty(s:digdict)
+        return s:digdict
     else
         redir => digraphs
             silent digraphs
         redir END
-        let s:dlist=[]
-        let s:dlist=map(split(substitute(digraphs, "\n", ' ', 'g'),
+        " Because of the redir, the next message might not be
+        " displayed correctly. So force a redraw now.
+        redraw!
+        let s:digdict={}
+        let dlist=[]
+        let dlist=map(split(substitute(digraphs, "\n", ' ', 'g'),
             \ '..\s<\?.\{1,2\}>\?\s\+\d\{1,5\}\zs'),
             \ 'substitute(v:val, "^\\s\\+", "", "")')
         " special case: digraph 57344: starts with 2 spaces
         "return filter(dlist, 'v:val =~ "57344$"')
-        let idx=match(s:dlist, '57344$')
+        let idx=match(dlist, '57344$')
         if idx > -1
-            let s:dlist[idx]='   '.s:dlist[idx]
+            let dlist[idx]='   '.dlist[idx]
         endif
-        return s:dlist
-    endif
-endfu
-
-fu! <sid>CompareList(l1, l2) "{{{1
-    return a:l1[1] == a:l2[1] ? 0 : a:l1[1] > a:l2[1] ? 1 : -1
-endfu
-
-fu! <sid>CompareDigraphs(d1, d2) "{{{1
-    let d1=matchstr(a:d1, '\d\+$')+0
-    let d2=matchstr(a:d2, '\d\+$')+0
-    if d1 == d2
-        return 0
-    elseif d1 > d2
-        return 1
-    else
-        return -1
-    endif
-endfu
-
-fu! <sid>OutputMessage(msg) " {{{1
-    redraw
-    echohl Title
-    if type(a:msg) == type([])
-        " List
-        for item in a:msg
-            echom item
+        for val in dlist
+            let dec=matchstr(val, '\d\+$')+0
+            if dec == 10 && val[0:1] ==? 'NU' " Decimal 10 is actually ASCII NUL (0)
+                let val = substitute(val, '10', '0', '')
+                let dec = 0
+            endif
+            let dig=get(s:digdict, dec, [])
+            let s:digdict[dec] = (empty(dig) ? [val] : s:digdict[dec] + [val])
         endfor
-    elseif type(a:msg) == type("")
-        " string
-        echom a:msg
+        return s:digdict
     endif
-    echohl Normal
 endfu
-
-fu! <sid>WarningMsg(msg) "{{{1
+fu! <sid>CompareByDecimalKey(d1, d2) "{{{2
+    return <sid>CompareByValue(a:d1['dec']+0, a:d2['dec']+0)
+endfu
+fu! <sid>CompareListByDec(l1, l2) "{{{2
+    return <sid>CompareByValue(a:l1+0,a:l2+0)
+endfu
+fu! <sid>CompareByValue(v1, v2) "{{{2
+    return (a:v1 == a:v2 ? 0 : (a:v1 > a:v2 ? 1 : -1))
+endfu
+fu! <sid>ScreenOutput(...) "{{{2
+    let list=filter(copy(a:000), '!empty(v:val)')
+    let i=0
+    let width = eval(join(map(copy(list), '<sid>Screenwidth(v:val)'), '+'))
+    if s:output_width + width >= &columns
+        echon "\n"
+        let s:output_width = width+1
+    else
+        let s:output_width += width
+    endif
+    for value in list
+        exe "echohl ". (i ? "Normal" : "Title")
+        echon value
+        let i+=1
+    endfor
+endfu
+fu! <sid>WarningMsg(msg) "{{{2
     echohl WarningMsg
     let msg = "UnicodePlugin: " . a:msg
     if exists(":unsilent") == 2
@@ -715,9 +839,96 @@ fu! <sid>WarningMsg(msg) "{{{1
     endif
     echohl Normal
 endfun
-
-fu! <sid>GetHtmlEntity(hex) "{{{1
-    return get(s:html, a:hex, '')
+fu! <sid>GetHtmlEntity(hex) "{{{2
+    let html=get(s:html, a:hex, '')
+    if empty(html) && (a:hex > 31 ||
+        \ a:hex == 9 || a:hex == 10 || a:hex == 13) &&
+        \ (a:hex < 127 || a:hex > 159) &&
+        \ (a:hex < 55296 || a:hex > 57343)
+        " Generate HTML Code only for where it is allowed (see wikipedia)
+        let html=printf("&#x%X;", a:hex)
+    endif
+    return html
+endfu
+fu! <sid>UnicodeWriteCache(data, ind) "{{{2
+    " Take unicode dictionary and write it in VimL form
+    " so it will be faster to load
+    let list = ['" internal cache file for unicode.vim plugin',
+        \ '" this file can safely be removed, it will be recreated if needed',
+        \ '',
+        \ 'let unicode#unicode#data = {}']
+    let format = "let unicode#unicode#data[0x%04X] = '%s'"
+    let list += map(copy(a:ind), 'printf(format, v:val, a:data[v:val])')
+    call writefile(list, s:directory. '/UnicodeData.vim')
+    unlet! list
+endfu
+fu! <sid>GetUnicodeName(dec) "{{{2
+    " returns Unicodename for decimal value
+    " CJK Unigraphs start at U+4E00 and go until U+9FFF
+    if a:dec >= 0x3400 && a:dec <=0x4DB5
+        return "Ideograph Extension A"
+    elseif a:dec >= 0x4E00 && a:dec <= 0x9FFF
+        return "CJK Ideograph"
+    elseif a:dec >= 0xAC00 && a:dec <= 0xD7AF
+        return "Hangul Syllable"
+    elseif a:dec >= 0xD800 && a:dec <= 0xDB7F
+        return "Non-Private Use High Surrogates"
+    elseif a:dec >= 0xDB80 && a:dec <= 0xDBFF
+        return "Private Use High Surrogates"
+    elseif a:dec >= 0xDC00 && a:dec <= 0xDFFF
+        return "Low Surrogates"
+    elseif a:dec >= 0xE000 && a:dec <= 0xF8FF
+        return "Private Use Zone"
+    elseif a:dec >= 0xFDD0 && a:dec <= 0xFDEF
+        return "<No Character>"
+    elseif a:dec == 0xFFFE
+        return "<No Character (BOM)>"
+    elseif a:dec == 0xFFFF
+        return "<No Character>"
+    elseif a:dec >= 0x1FFFE && a:dec <= 0x1FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x20000 && a:dec <= 0x2A6D6
+        return "Ideograph Extension B"
+    elseif a:dec >= 0x2FFFE && a:dec <= 0x2FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x2A700 && a:dec <= 0x2B73F
+        return "Ideograph Extension C"
+    elseif a:dec >= 0x3FFFE && a:dec <= 0x3FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x4FFFE && a:dec <= 0x4FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x5FFFE && a:dec <= 0x5FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x6FFFE && a:dec <= 0x6FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x7FFFE && a:dec <= 0x7FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x8FFFE && a:dec <= 0x8FFFF
+        return "<No Character>"
+    elseif a:dec >= 0x9FFFE && a:dec <= 0x9FFFF
+        return "<No Character>"
+    elseif a:dec >= 0xAFFFE && a:dec <= 0xAFFFF
+        return "<No Character>"
+    elseif a:dec >= 0xBFFFE && a:dec <= 0xBFFFF
+        return "<No Character>"
+    elseif a:dec >= 0xCFFFE && a:dec <= 0xCFFFF
+        return "<No Character>"
+    elseif a:dec >= 0xDFFFE && a:dec <= 0xDFFFF
+        return "<No Character>"
+    elseif a:dec >= 0xEFFFE && a:dec <= 0xEFFFF
+        return "<No Character>"
+    elseif a:dec >= 0xF0000 && a:dec <= 0xFFFFD
+        return "Character from Plane 15 for private use"
+    elseif a:dec >= 0xFFFFE && a:dec <= 0xFFFFF
+        return "<No Character>"
+    elseif a:dec >= 0x100000 && a:dec <= 0x10FFFD
+        return "Character from Plane 16 for private use"
+    elseif a:dec >= 0x10FFFE && a:dec <= 0x10FFFF
+        return "<No Character>"
+    else
+        let name = get(s:UniDict, a:dec, '')
+        return empty(name) ? "Character not found" : name
+    endif
 endfu
 " Modeline "{{{1
 " vim: ts=4 sts=4 fdm=marker com+=l\:\" fdl=0 et

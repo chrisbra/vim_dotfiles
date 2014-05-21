@@ -7,29 +7,44 @@ hi clear
 if exists("syntax_on")
     syntax reset
 endif
-let g:colors_name="distractfree"
+let g:colors_name="darkroom"
 
-hi Statement    ctermfg=DarkCyan    ctermbg=Black	guifg=DarkCyan      guibg=Black
-hi Constant     ctermfg=DarkCyan    ctermbg=Black     	guifg=DarkCyan	    guibg=Black
-hi Identifier   ctermfg=Green	    ctermbg=Black     	guifg=Green	    guibg=Black
-hi Type         ctermfg=DarkCyan    ctermbg=Black     	guifg=DarkCyan	    guibg=Black
-hi String       ctermfg=Cyan	    ctermbg=Black     	guifg=Cyan	    guibg=Black
-hi Boolean      ctermfg=DarkCyan    ctermbg=Black     	guifg=DarkCyan	    guibg=Black
-hi Number       ctermfg=DarkCyan    ctermbg=Black     	guifg=DarkCyan	    guibg=Black
-hi Special      ctermfg=DarkGreen   ctermbg=Black     	guifg=darkGreen     guibg=Black
-hi Scrollbar    ctermfg=DarkCyan    ctermbg=Black     	guifg=DarkCyan      guibg=Black
-hi Cursor       ctermfg=Black	    ctermbg=Green     	guifg=Black	    guibg=Green
-hi WarningMsg   ctermfg=Yellow	    ctermbg=Black	guifg=Yellow	    guibg=Black
-hi Directory    ctermfg=Green	    ctermbg=DarkBlue	guifg=Green	    guibg=DarkBlue
-hi Title        ctermfg=White	    ctermbg=DarkBlue	guifg=White	    guibg=DarkBlue 
-hi Cursorline   ctermfg=Black	    ctermbg=DarkGreen	guibg=darkGreen	    guifg=black
-hi Normal       ctermfg=Green	    ctermbg=Black	guifg=Green	    guibg=Black
-hi PreProc      ctermfg=DarkGreen   ctermbg=Black     	guifg=DarkGreen	    guibg=Black
-hi Comment      ctermfg=darkGreen   ctermbg=Black     	guifg=darkGreen	    guibg=Black
-hi LineNr       ctermfg=Green	    ctermbg=Black	guifg=Green	    guibg=Black
-hi ErrorMsg     ctermfg=Red	    ctermbg=Black     	guifg=Red	    guibg=Black
-hi Visual       ctermfg=White	    ctermbg=DarkGray	cterm=underline	    guifg=White		guibg=DarkGray	gui=underline
-hi Folded       ctermfg=DarkCyan    ctermbg=Black     	cterm=underline	    guifg=DarkCyan	guibg=Black	gui=underline
+let ctermbg=(get(g:, 'distractfree_transparent_cterm', 0) ? 'NONE' : 'Black')
+
+fu! <sid>Hi(group, properties)
+    exe ':hi' a:group a:properties
+endfu
+
+for group in ['Statement', 'Constant', 'Type', 'Boolean', 'Number', 'Scrollbar']
+    call <sid>Hi(group, 'ctermfg=DarkCyan ctermbg='.ctermbg.' guifg=DarkCyan guibg=Black')
+endfor
+
+for group in ['Special', 'PreProc', 'Comment']
+    call <sid>Hi(group, 'ctermfg=DarkGreen ctermbg='.ctermbg.' guifg=DarkGreen guibg=Black')
+endfor
+
+for group in ['Identifier', 'Normal', 'LineNr']
+    call <sid>Hi(group, 'ctermfg=Green ctermbg='.ctermbg.' guifg=Green guibg=Black')
+endfor
+
+call <sid>Hi('VertSplit', 'ctermfg=Green    ctermbg='.ctermbg.' guibg=Black guifg=NONE gui=NONE')
+call <sid>Hi('Cursorline', 'ctermfg=Black    ctermbg='.ctermbg.' guibg=DarkGreen guifg=Black')
+call <sid>Hi('Folded',     'ctermfg=DarkCyan ctermbg='.ctermbg.' cterm=underline guifg=DarkCyan guibg=Black gui=underline')
+call <sid>Hi('ErrorMsg',   'ctermfg=Red      ctermbg='.ctermbg.' guibg=Black guifg=Red')
+call <sid>Hi('WarningMsg', 'ctermfg=Yellow   ctermbg='.ctermbg.' guibg=Black guifg=Yellow')
+call <sid>Hi('String',     'ctermfg=Cyan     ctermbg='.ctermbg.' guibg=Black guifg=Cyan')
+call <sid>Hi('SignColumn', 'ctermfg=Yellow   ctermbg='.ctermbg.' guibg=Black guifg=Yellow')
+
+hi Directory    ctermfg=Green       ctermbg=DarkBlue    guifg=Green         guibg=DarkBlue
+hi Cursor       ctermfg=Black       ctermbg=Green       guifg=Black         guibg=Green
+hi Title        ctermfg=White       ctermbg=DarkBlue    guifg=White         guibg=DarkBlue 
+hi Visual       ctermfg=White       ctermbg=DarkGray    cterm=underline     guifg=White         guibg=DarkGray  gui=underline
+
+" link some highlight groups
+hi! link NonText Ignore
+
+" Make sure bg is still dark (might have been reset after setting the Normal group
+set background=dark
 
 " Reset by distract free
 " hi NonText      ctermfg=Black  ctermbg=Black guifg=black  guibg=Black

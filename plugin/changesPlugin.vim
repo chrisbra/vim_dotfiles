@@ -3,14 +3,10 @@
 " Version:  0.14
 " Authors:  Christian Brabandt <cb@256bit.org>
 " Last Change: Wed, 14 Aug 2013 22:10:39 +0200
-
-
 " Script:  http://www.vim.org/scripts/script.php?script_id=3052
 " License: VIM License
 " Documentation: see :help changesPlugin.txt
 " GetLatestVimScripts: 3052 14 :AutoInstall: ChangesPlugin.vim
-
-
 " ---------------------------------------------------------------------
 "  Load Once: {{{1
 if &cp || exists("g:loaded_changes")
@@ -20,7 +16,6 @@ let g:loaded_changes       = 1
 let s:keepcpo              = &cpo
 set cpo&vim
 
-let s:autocmd  = get(g:, 'changes_autocmd', 0)
 " ------------------------------------------------------------------------------
 " Public Interface: {{{1
 
@@ -35,14 +30,15 @@ com! CD  ChangesDiffMode
 com! -nargs=? -complete=file -bang EnableChanges	call changes#EnableChanges(1, <q-bang>, <q-args>)
 com! DisableChanges		call changes#CleanUp()
 com! ToggleChangeView		call changes#TCV()
-com! ChangesCaption		call changes#Output(1)
+com! ChangesCaption		call changes#Output()
 com! ChangesLinesOverview	call changes#EnableChanges(2, '')
 com! ChangesDiffMode		call changes#EnableChanges(3, '')
 let g:changes_did_startup=1
 
-if s:autocmd
-    exe "try | call changes#Init() | catch | call changes#WarningMsg() | endtry"
-    exe "au BufWinEnter,BufWritePost * call changes#EnableChanges(1, '')"
+if get(g:, 'changes_autocmd', 1)
+    "exe "try | call changes#Init() | catch | call changes#WarningMsg() | endtry"
+    "exe "au BufWinEnter,BufWritePost * call changes#EnableChanges(1, '')"
+    exe ":call changes#AuCmd(1)"
 endif
 
 au VimEnter * let g:changes_did_startup = 1

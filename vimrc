@@ -2,7 +2,7 @@
 " Global .vimrc Settings from
 " Christian Brabandt <cb@256bit.org>
 "
-" Last update: Fr 2014-03-07 13:29
+" Last update: Fr 2014-05-02 13:50
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "
@@ -51,7 +51,7 @@ set hidden
 "set tags=~/tags
 
 " Enable file modelines (default is ok)
-" set modelines=5
+set modeline modelines=1
 
 " when joining, prevent inserting an extra space before a .?!
 set nojoinspaces
@@ -102,7 +102,7 @@ set history=1000
 
 " Use of a .viminfo file
 "set viminfo=%,!,'50,\"100,:100
-set viminfo=!,'50
+set viminfo=!,'50,n/tmp/viminfo
 
 " Commandline Completion
 set wildmode=list:longest,longest:full
@@ -339,7 +339,7 @@ endif
 source ~/.vim/plugins.vim
 " This script contains mappings
 source ~/.vim/mapping.vim
-"source ~/.vim/functions.vim
+source ~/.vim/functions.vim
 " For abbreviations read in the following file:
 "source ~/.vim/abbrev.vim
 

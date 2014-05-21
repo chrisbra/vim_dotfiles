@@ -112,8 +112,9 @@ you want to save that version, use |:saveas|.
 
 cvim is a python script (contributed by Marcin Szamotulski) that is
 distributed together with the recoverplugin. It is located in the contrib/
-folder of the plugin source. (Note: It is currently not distributed via the
-vimball version of the plugin).
+folder of the plugin source (or in the contrib/ directory of your $VIMRUNTIME/
+path (e.g. usually in ~/.vim/contrib) if you have installed the vimball
+version of the plugin)
 
 Usage:
 
@@ -127,9 +128,12 @@ cvim [-h] [-r] [-f] [-a] {directory} ...
     from:
 	http://code.google.com/p/psutil/
 
-    |cvim| works with both python2.7 and python3.4.  It may work with
-    python2.6 though it has not been tested and it will not work with
-    python3.3 or earlier.
+    If a file has multiple |swapfile|s left you can exit vim with |:cq| to
+    preserve them all on disk or you will be asked to delete them/step through
+    them.  These |swapfile|s are sorted by their modification time stamp
+    (newest first).
+
+    |cvim| works with python2.6, 2.7 and python3.3.
 
     The scripts accepts the following positional arguments:
     {directory}         directory where to look for swap (by default current
@@ -140,7 +144,9 @@ cvim [-h] [-r] [-f] [-a] {directory} ...
     -r, -R, --recursive  search directory recursively
     -f, --find           only find and list |swapfile|s, it impiles -r
     -a, --ask            ask before deleting swap files which do not differ from
-			 the file content.
+			 the file.
+
+Note: cvim might not work on Windows.
 ==============================================================================
 4. Plugin Feedback                                        *recover-feedback*
 
@@ -169,6 +175,7 @@ third line of this document.
   usefule README.md file, contribted by Shubham Rao, thanks!)
 - merge issue 22 (https://github.com/chrisbra/Recover.vim/pull/22, delete BufReadPost autocommand
   contributed by Marcin Szamotulski, thanks!)
+- distribute |cvim| script (contributed by Marcin Szamotulski, thanks!)
 
 0.17: Feb 16, 2013 "{{{1
 

@@ -34,7 +34,7 @@ command! -bang Q q<bang>
 " Autocommands "{{{2
 " if 'eaqualalways' is set, this should also taken into account, when Resizing
 " Vim
-au VimResized * if &ea | wincmd = |endif
+"au VimResized * if &ea | wincmd = |endif
 
 " Cscope
 

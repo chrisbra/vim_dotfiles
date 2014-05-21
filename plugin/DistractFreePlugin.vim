@@ -3,8 +3,8 @@
 " Version:      0.5
 " Maintainer:   Christian Brabandt <cb@256bit.org>
 " Last Change: Wed, 14 Aug 2013 22:36:39 +0200
-" Script:       http://www.vim.org/scripts/script.php?script_id=
-" Copyright:    (c) 2009, 2010, 2011, 2012 by Christian Brabandt
+" Script:       http://www.vim.org/scripts/script.php?script_id=4357
+" Copyright:    (c) 2009-2014 by Christian Brabandt
 "
 "       The VIM LICENSE applies to DistractFree.vim
 "       (see |copyright|) except use "DistractFree.vim"

@@ -5,7 +5,7 @@
 " Last Change: Wed, 14 Aug 2013 22:36:39 +0200
 "
 " Script: http://www.vim.org/scripts/script.php?script_id=4357
-" Copyright:   (c) 2009 - 2013 by Christian Brabandt
+" Copyright:   (c) 2009 - 2014 by Christian Brabandt
 "			   The VIM LICENSE applies to DistractFree.vim 
 "			   (see |copyright|) except use "DistractFree.vim" 
 "			   instead of "Vim".
@@ -15,14 +15,12 @@
 "
 " Functions:
 " (autoloaded) file
+let s:distractfree_active = 0
 
 " Functions: "{{{1
 " Output a warning message, if 'verbose' is set
 fu! <sid>WarningMsg(text, force) "{{{2
-	if empty(a:text)
-		return
-	endif
-	let text = "DistractFree: ". a:text
+	let text = "[DistractFree:]". a:text
 	let v:errmsg = text
 	if !&verbose && !a:force
 		return
@@ -32,27 +30,17 @@ fu! <sid>WarningMsg(text, force) "{{{2
 	echohl None
 endfu
 
-let s:distractfree_active = 0
 fu! <sid>Init() " {{{2
-    " The desired column width.  Defaults to 90%
-    if !exists( "g:distractfree_width" )
-        let g:distractfree_width = '90%'
-    endif
+    " The desired column width. Defaults to 75%
+	let g:distractfree_width       = get(g:, 'distractfree_width', '75%')
+    " The desired height  Defaults to 80%
+	let g:distractfree_height      = get(g:, 'distractfree_height', '80%')
 
     " The colorscheme to load
-    if !exists( "g:distractfree_colorscheme" )
-        let g:distractfree_colorscheme = ""
-    endif
+	let g:distractfree_colorscheme = get(g:, 'distractfree_colorscheme', '')
 
     " The font to use
-    if !exists( "g:distractfree_font" )
-        let g:distractfree_font = ""
-    endif
-
-
-    if exists("g:distractfree_nomap_keys")
-        let s:distractfree_nomap_keys = g:distractfree_nomap_keys
-    endif
+	let g:distractfree_font        = get(g:, 'distractfee_font', '')
 
 	" Set those options to their values in distractfree mode, if you don't
 	" want them to be set, set the option g:distractfree_keep_options to
@@ -62,23 +50,27 @@ fu! <sid>Init() " {{{2
     " the cursor at all times?  Defaults to 999 (which centers your cursor in the 
     " active window).
 	let s:_def_opts = {'t_mr': '', 'scrolloff': get(g:, 'distractfree_scrolloff', 999),
-				\ 'laststatus': 0, 'textwidth': winwidth(winnr()), 'number': 0,
+				\ 'laststatus': 0, 'textwidth': 'winwidth(winnr())', 'number': 0,
 				\ 'relativenumber': 0, 'linebreak': 1, 'wrap': 1, 'g:statusline': '%#Normal#',
 				\ 'l:statusline': '%#Normal#', 'cursorline': 0, 'cursorcolumn': 0,
-				\ 'ruler': 0, 'guioptions': '', 'fillchars':  'vert:|', 'showtabline': 0,
-				\ 'showbreak': ''}
+				\ 'ruler': 0, 'guioptions': '', 'fillchars':  'vert: ', 'showtabline': 0,
+				\ 'showbreak': '', 'foldenable': 0, 'tabline': '', 'guitablabel': '', 'lazyredraw': 1}
 
     " Given the desired column width, and minimum sidebar width, determine
     " the minimum window width necessary for splitting to make sense
     if match(g:distractfree_width, '%') > -1 && has('float')
         let s:minwidth  = float2nr(round(&columns *
 				\ (matchstr(g:distractfree_width, '\d\+')+0.0)/100.0))
+	else
+        let s:minwidth = matchstr(g:distractfree_width, '\d\+')
+	endif
+
+    if match(g:distractfree_height, '%') > -1 && has('float')
         let s:minheight = float2nr(round(&lines *
-				\ (matchstr(g:distractfree_width, '\d\+')+0.0)/100.0))
+				\ (matchstr(g:distractfree_height, '\d\+')+0.0)/100.0))
     else
         " assume g:distractfree_width contains columns
-        let s:minwidth = matchstr(g:distractfree_width, '\d\+')
-        let s:minheight = s:minwidth/2
+        let s:minheight = matchstr(g:distractfree_height, '\d\+')
     endif
 	if !exists("s:sessionfile")
 		let s:sessionfile = tempname()
@@ -106,7 +98,7 @@ fu! <sid>SaveRestore(save) " {{{2
 		let s:main_buffer = bufnr('')
 		if exists("g:colors_name")
 			let s:colors = g:colors_name
-			let s:higroups = <sid>SaveHighlighting('User')
+			let s:higroups = <sid>SaveHighlighting('User\|NonText')
 		endif
 		if !empty(g:distractfree_font)
 			let s:guifont = &guifont
@@ -119,25 +111,28 @@ fu! <sid>SaveRestore(save) " {{{2
 			if match(get(g:, 'distractfree_keep_options', ''), opt) > -1
 				continue
 			elseif exists("+". (opt=~ '^[glw]:' ? opt[2:] : opt))
-				if (opt == 'g:statusline' && get(g:, 'loaded_airline', 0) && exists(":AirlineToggle") == 2)
-					" Disable airline statusline
-					:AirlineToggle
+				if (opt == 'g:statusline')
+					" Disable custom statusline
+					call <sid>ResetStl(1)
 				endif
 				exe 'let s:_opts["'.opt. '"] = &'. (opt =~ '^[glw]:' ? '' : 'l:'). opt
-				exe 'let &'. (opt =~ '^[glw]:' ? '' : 'l:').opt. '="'. s:_def_opts[opt].'"'
+				if (opt == 'textwidth')
+					" needs to be evaluated
+					exe 'let &l:'.opt. '='. s:_def_opts[opt]
+				else
+					exe 'let &'. (opt =~ '^[glw]:' ? '' : 'l:').opt. '="'. s:_def_opts[opt].'"'
+				endif
 			endif
 		endfor
 		" Try to load the specified colorscheme
 		if exists("g:distractfree_colorscheme") && !empty(g:distractfree_colorscheme)
-			let colors = "colors/". g:distractfree_colorscheme . (g:distractfree_colorscheme[-4:] == ".vim" ? "" : ".vim")
-			if !(<sid>LoadFile(colors))
-				call <sid>WarningMsg("Colorscheme ". g:distractfree_colorscheme. " not found!",0)
-			endif
+			" prevent CSApprox from kicking in...
+			exe "noa colorscheme" fnamemodify(g:distractfree_colorscheme, ':r')
 		endif
         " Set highlighting
-        for hi in ['VertSplit', 'NonText', 'SignColumn']
-            call <sid>ResetHi(hi)
-        endfor
+        " for hi in ['VertSplit', 'NonText', 'SignColumn']
+        "    call <sid>ResetHi(hi)
+        " endfor
     else
 		unlet! s:main_buffer
 		unlet! g:colors_name
@@ -151,21 +146,22 @@ fu! <sid>SaveRestore(save) " {{{2
 			let &guifont = s:guifont
 		endif
 		for [opt, val] in items(s:_opts)
-			if (opt == 'g:statusline' && get(g:, 'loaded_airline', 0) && exists(":AirlineToggle") == 2)
-				" Disable airline statusline
-				:AirlineToggle
-			endif
 			exe 'let &'.(opt =~ '^[glw]:' ? '' : 'l:').opt. '="'. val.'"'
+			if (opt == 'g:statusline')
+				" Enable airline statusline
+				" Make sure airline autocommand does not exists (else it might disable Airline again)
+				if exists('#airline')
+					exe "aug airline"| exe "au!"|exe "aug end"|exe "aug! airline"
+				endif
+				call <sid>ResetStl(0)
+			endif
 		endfor
-
-"        let [ &l:t_mr, &l:so, &l:ls, &l:tw, &l:nu, &l:lbr, &l:wrap, &l:stl, &g:stl, &l:cul, &l:cuc, &l:go, &l:fcs, &l:ru ] = s:_a
-"        if exists("+rnu")
-"            let &l:rnu = s:_rnu
-"        endif
     endif
 endfu
 
 fu! <sid>ResetHi(group) "{{{2
+	" not needed anymore
+	" Resets a:group to Normal highlighting group
 	if !exists("s:default_hi")
 		redir => s:default_hi | sil! hi Normal | redir END
 		let s:default_hi = substitute(s:default_hi, 'font=.*$', '', '')
@@ -181,7 +177,9 @@ fu! <sid>ResetHi(group) "{{{2
 endfu
 
 fu! <sid>NewWindow(cmd) "{{{2
-    exe a:cmd
+	"call <sid>WarningMsg(printf("%s noa sil %s",(exists(":noswapfile") ? ':noswapfile': ''),a:cmd),0)
+	" needs some 7.4.1XX patch
+	exe printf("%s noa sil %s",(exists(":noswapfile") ? ':noswapfile': ''),a:cmd)
     sil! setlocal noma nocul nonu nornu buftype=nofile winfixwidth winfixheight nobuflisted bufhidden=wipe
     let &l:stl='%#Normal#'
     let s:bwipe = bufnr('%')
@@ -208,7 +206,8 @@ fu! <sid>BufEnterHidden() "{{{2
 endfu
 
 fu! <sid>MapKeys(enable) "{{{2
-    if exists("s:distractfree_nomap_keys") && s:distractfree_nomap_keys
+	" Disallow remapping of keys
+	if get(g:, 'distractfree_nomap_keys', 0)
         return
     endif
 	if !exists("s:mapped_keys")
@@ -310,15 +309,47 @@ fu! <sid>SaveRestoreWindowSession(save) "{{{2
 		let &ssop = _so
 	else
 		if exists("s:sessionfile") && filereadable(s:sessionfile)
+			aug DistractFree_SessionLoad
+				au!
+				au SwapExists * call <sid>WarningMsg("Found swapfile ".v:swapname.". Opening [RO]!",1)|let v:swapchoice='o'
+			aug end
 			exe ":sil so" s:sessionfile
+			aug DistractFree_SessionLoad
+				au!
+			aug end
+			aug! DistractFree_SessionLoad
 			"call delete(s:sessionfile)
 		endif
 	endif
 endfu
-
+fu! <sid>ResetStl(reset) "{{{2
+	if a:reset
+		" disable custom statusline
+		if exists("#airline") && exists(":AirlineToggle") == 2
+			:AirlineToggle
+		endif
+		let s:_stl = &l:stl
+		let cur_win = winnr()
+		windo let &l:stl='%#Normal#'
+		exe "noa" cur_win "wincmd w"
+	else
+		if exists("s:_stl") && !exists(":AirlineToggle")
+			let &l:stl=s:_stl
+		endif
+		if !exists("#airline") && exists(":AirlineToggle") == 2
+			" enable airline
+			:AirlineToggle
+		endif
+		if exists(":AirlineRefresh") == 2
+			" force refreshing the highlighting groups (might be off
+			" because of loading a different color scheme).
+			AirlineRefresh
+		endif
+	endif
+endfu
 fu! DistractFree#DistractFreeToggle() "{{{2
     call <sid>Init()
-    if s:distractfree_active == 1
+    if s:distractfree_active
         " Close upper/lower/left/right split windows
 		" ignore errors
 		try
@@ -329,6 +360,7 @@ fu! DistractFree#DistractFreeToggle() "{{{2
 			return
 		finally 
 			unlet! s:bwipe
+			let s:distractfree_active=0
 			" Reset options
 			call <sid>SaveRestore(0)
 			" Reset mappings
@@ -343,6 +375,10 @@ fu! DistractFree#DistractFreeToggle() "{{{2
 			if exists("g:distractfree_hook") && get(g:distractfree_hook, 'stop', 0) != 0
 				exe g:distractfree_hook['stop']
 			endif
+			if exists("#airline")
+			" Make sure, statusline is updated immediately
+				doauto <nomodeline> airline VimEnter
+			endif
 		endtry
     else
 		call <sid>SaveRestoreWindowSession(1)
@@ -354,36 +390,45 @@ fu! DistractFree#DistractFreeToggle() "{{{2
 			call <sid>WarningMsg("Can't start DistractFree mode, other windows contain non-saved changes!", 1)
 			return
 		endtry
-        call <sid>SaveRestore(1)
-        let s:sidebar = (&columns - s:minwidth) / 2
-        let s:lines = (&lines - s:minheight) / 2
+		" minus two for the window border
+        let s:sidebar = ((&columns-2) - s:minwidth) / 2
+        let s:lines = ((&lines-2) - s:minheight) / 2
         " Create the left sidebar
-        call <sid>NewWindow("noa sil leftabove ".  s:sidebar. "vsplit new")
+        call <sid>NewWindow("leftabove vert ".  (s:sidebar+s:sidebar/2). "split new")
         " Create the right sidebar
-        call <sid>NewWindow("noa sil rightbelow ". s:sidebar. "vsplit new")
+		" adjust sidebar widht (left width should be wider than right width)
+        call <sid>NewWindow("rightbelow vert ". (s:sidebar-s:sidebar/2). "split new")
         " Create the top sidebar
-        call <sid>NewWindow("noa sil leftabove ".  s:lines.   "split new")
+        call <sid>NewWindow("leftabove ".  s:lines.   "split new")
         " Create the bottom sidebar
-        call <sid>NewWindow("noa sil rightbelow ". s:lines.   "split new")
+        call <sid>NewWindow("rightbelow ". s:lines.   "split new")
+        call <sid>SaveRestore(1)
         " Setup navigation over "display lines", not "logical lines" if
         " mappings for the navigation keys don't already exist.
         call <sid>MapKeys(1)
 
 		" Set autocommand for closing the sidebar
-		if exists("##QuitPre")
-			augroup DistractFreeMain
-				au!
+		aug DistractFreeMain
+			au!
+			if exists("##QuitPre")
 				au QuitPre <buffer> :exe "noa sil! ". s:bwipe. "bw"
-				au VimLeave * :call delete(s:sessionfile)
-			augroup END
+			endif
+			au VimLeave * :call delete(s:sessionfile)
+			if get(g:, 'distractfree_enable_normalmode_stl',0)
+				au InsertEnter <buffer> call <sid>ResetStl(1)
+				au InsertLeave <buffer> call <sid>ResetStl(0)
+			endif
+		aug END
+		if get(g:, 'distractfree_enable_normalmode_stl',0)
+			call <sid>ResetStl(0)
 		endif
 
         if exists("g:distractfree_hook") && get(g:distractfree_hook, 'start', 0) != 0
             exe g:distractfree_hook['start']
         endif
 		" exe "windo | if winnr() !=".winnr(). "|let &l:stl='%#Normal#'|endif"
+		let s:distractfree_active=1
     endif
-    let s:distractfree_active = !s:distractfree_active
 endfunction
 
 fu! DistractFree#Active() "{{{2

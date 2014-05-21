@@ -1,8 +1,8 @@
 " Vim plugin for checking attachments with mutt
 " Maintainer:  Christian Brabandt <cb@256bit.org>
-" Last Change: Wed, 14 Aug 2013 22:24:01 +0200
-" Version:     0.15
-" GetLatestVimScripts: 2796 15 :AutoInstall: CheckAttach.vim
+" Last Change: Thu, 27 Mar 2014 23:24:37 +0100
+" Version:     0.16
+" GetLatestVimScripts: 2796 16 :AutoInstall: CheckAttach.vim
 
 " Plugin folklore "{{{1
 " Exit quickly when:
@@ -128,6 +128,7 @@ fu! <SID>CheckAttach() "{{{2
     " This function checks your mail for the words specified in
     " check, and if it find them, you'll be asked to attach
     " a file.
+    " Called from a BufWrite autocommand
     call <SID>Init()
     if empty("s:attach_check") || v:cmdbang
 	call <SID>WriteBuf(v:cmdbang)
@@ -170,7 +171,7 @@ fu! <SID>CheckAttach() "{{{2
 		let list = split(expand(ans), "\n")
 		for attach in list
 		    call append(line('.'), 'Attach: ' .
-			\ escape(attach, " \t\\"))
+			\ escape(fnamemodify(attach, ':p'), " \t\\"))
 		    redraw
 		endfor
 		if <sid>CheckAlreadyAttached(subjline)
@@ -204,6 +205,7 @@ fu! <SID>ExternalFileBrowser(pat) "{{{2
 endfu
 
 fu! <SID>AttachFile(...) "{{{2
+    " Called from :AttachFile
     call <sid>Init()
     if empty(a:000) && empty(s:external_file_browser)
 	call <sid>WarningMsg("No pattern supplied, can't attach a file!")
@@ -235,7 +237,7 @@ fu! <SID>AttachFile(...) "{{{2
 	endif
 	for val in list
 	    for item in eval(val)
-		call append('.', 'Attach: '. escape(item, " \t\\"))
+		call append('.', 'Attach: '. escape(fnamemodify(item, ':p'), " \t\\"))
 		redraw!
 	    endfor
 	endfor
