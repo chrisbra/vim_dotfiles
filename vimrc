@@ -1,13 +1,12 @@
 "-------------------------------------------------------
 " Global .vimrc Settings from
 " Christian Brabandt <cb@256bit.org>
-"
 " Last update: Fr 2014-05-02 13:50
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "
 " do NOT behave like original vi
-" I like vim's  features a lot better
+" I like vim's features a lot better
 " This is already set automatically by sourcing a .vimrc
 " set nocp
 
@@ -102,7 +101,7 @@ set history=1000
 
 " Use of a .viminfo file
 "set viminfo=%,!,'50,\"100,:100
-set viminfo=!,'50,n/tmp/viminfo
+"set viminfo=!,'50,n/tmp/viminfo
 
 " Commandline Completion
 set wildmode=list:longest,longest:full
@@ -162,6 +161,12 @@ set sh=zsh
 " certain numberformats
 " (e.g. 007 will be incremented to 010, because vim thinks its octal)
 set nrformats=
+
+" Breakindent
+if exists('+breakindent')
+    set bri
+    set briopt=min:20
+endif
 
 "---------------------------------------------
 " Keyword completion
@@ -235,7 +240,13 @@ if has("folding")
     set foldenable foldmethod=marker foldlevelstart=0
 endif
 
-if (&term =~ '^screen')
+let &titleold = fnamemodify(&shell, ":t")
+if exists("$PUTTY_TERM")
+    " putty works mostly like xterm (in face more features work OOTB
+    " pretending to be an xterm compatible terminal (cursor keys, etc),
+    " so use that one instead of putty-256color
+    set term=xterm-color t_Co=256 title
+elseif (&term =~ '^screen')
   "if expand("$COLORTERM") !~ 'rxvt'
     set t_Co=256
   "else
@@ -246,7 +257,6 @@ if (&term =~ '^screen')
     set title
     set t_ts=k
     set t_fs=\
-    let &titleold = fnamemodify(&shell, ":t")
     set titlelen=15
     " set information for title in screen (see :h 'statusline')
     set titlestring=%t%=%<%(\ %{&encoding},[%{&modified?'+':'-'}],%p%%%)
@@ -264,7 +274,7 @@ if (&term =~ '^screen')
     execute "set <xDown>=\e[1;*B"
     execute "set <xRight>=\e[1;*C"
     execute "set <xLeft>=\e[1;*D"
-elseif (&term =~ 'putty\|xterm-256\|xterm-color\|xterm')
+elseif (&term =~ 'xterm-256\|xterm-color\|xterm')
     " Let's have 256 Colors. That rocks!
     " Putty and screen are aware of 256 Colors on recent systems
     set t_Co=256 title
@@ -288,7 +298,7 @@ if (&t_Co == 256) || (&t_Co == 88) || has("gui_running")
 "    else
     "colorscheme desert256
     let g:solarized_termcolors=256
-    colors solarized
+    colors molokai
     " Highlight of Search items is broken in desert256
     "hi Search ctermfg=0 ctermbg=159
 "    endif
@@ -322,7 +332,7 @@ digraphs \|- 166
 if &encoding == "utf-8"
 "    set listchars=eol:$,trail:·,tab:>>·,extends:>,precedes:<
     "set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
-     exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026"
+     exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
      exe "set fillchars=vert:\u2502,fold:\u2500,diff:\u2014"
 else
 " Special characters that will be shown, when set list is on
