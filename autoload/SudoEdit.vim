@@ -68,7 +68,9 @@ fu! <sid>Init() "{{{2
                 let s:writable_file = shellescape(fnamemodify(s:writable_file, ':p:8'))
             endif
         else
-            let s:writable_file = tempname()
+            if !exists("s:writable_file")
+                let s:writable_file = tempname()
+            endif
         endif
 
         call <sid>SudoAskPasswd()
@@ -115,6 +117,9 @@ fu! <sid>LocalSettings(values, readflag, file) "{{{2
         let o_tte = &t_te
         " Turn off screen switching
         set t_ti= t_te=
+        " avoid a problem with noshelltemp #32
+        let o_stmp = &stmp
+        setl stmp
         " Set shell to something sane (zsh, doesn't allow to override files using
         " > redirection, issue #24, hopefully POSIX sh works everywhere)
         let o_shell = &shell
@@ -135,7 +140,7 @@ fu! <sid>LocalSettings(values, readflag, file) "{{{2
             endif
             let file = fnamemodify(file, ':p')
         endif
-        return [o_srr, o_ar, o_tti, o_tte, o_shell, file]
+        return [o_srr, o_ar, o_tti, o_tte, o_shell, o_stmp, file]
     else
         " Make sure, persistent undo information is written
         " but only for valid files and not empty ones
@@ -198,7 +203,7 @@ fu! <sid>LocalSettings(values, readflag, file) "{{{2
             " shellredirection
             let &srr  = a:values[0]
             " Screen switchting codes, and shell
-            let [ &t_ti, &t_te, &shell ] = a:values[2:4]
+            let [ &t_ti, &t_te, &shell, &stmp ] = a:values[2:5]
             " Reset autoread option
             let &l:ar = a:values[1]
         endtry
@@ -234,7 +239,7 @@ fu! <sid>SudoRead(file) "{{{2
     sil %d _
     if <sid>Is("win")
         let file=shellescape(fnamemodify(a:file, ':p:8'))
-        let cmd= '!'. s:dir.'\sudo.cmd dummy read '. file. 
+        let cmd= '!'. s:dir.'\sudo.cmd read '. file. 
             \ ' '. s:writable_file.  ' '.
             \ join(s:AuthTool, ' ')
     else
@@ -270,15 +275,19 @@ fu! <sid>SudoRead(file) "{{{2
 endfu
 
 fu! <sid>SudoWrite(file) range "{{{2
+    if bufloaded(s:writable_file)
+        " prevent E139 error
+        exe "bw!" s:writable_file
+    endif
     if  s:AuthTool[0] == 'su'
     " Workaround since su cannot be run with :w !
-        exe a:firstline . ',' . a:lastline . 'w! ' . s:writable_file
+        exe "sil keepalt noa ". a:firstline . ',' . a:lastline . 'w! ' . s:writable_file
         let cmd=':!' . join(s:AuthTool, ' ') . '"mv ' . s:writable_file . ' ' .
-            \ shellescape(a:file,1) . '" --'
+            \ shellescape(a:file,1) . '" -- 2>' . shellescape(s:error_file)
     else
         if <sid>Is("win")
-            exe a:firstline . ',' . a:lastline . 'w! ' . s:writable_file[1:-2]
-            let cmd= '!'. s:dir.'\sudo.cmd dummy write '. shellescape(fnamemodify(a:file, ':p:8')).
+            exe 'sil keepalt noa '. a:firstline . ',' . a:lastline . 'w! ' . s:writable_file[1:-2]
+            let cmd= '!'. s:dir.'\sudo.cmd write '. shellescape(fnamemodify(a:file, ':p:8')).
                 \ ' '. s:writable_file. ' '. join(s:AuthTool, ' ')
         else
             let cmd=printf('%s >/dev/null 2>%s %s', <sid>Path('tee'),
@@ -300,10 +309,7 @@ fu! <sid>SudoWrite(file) range "{{{2
         if empty(glob(a:file))
             let s:new_file = 1
         endif
-        let sshm = &shortmess
-        set shortmess+=A  " don't give the "ATTENTION" message when an existing swap file is found.
-        exe "f" fnameescape(a:file)
-        let &shortmess = sshm
+        call <sid>SetBufName(a:file)
         call <sid>Exec(cmd)
     endif
     if v:shell_error
@@ -398,7 +404,9 @@ endfu
 fu! <sid>Exec(cmd) "{{{2
     let cmd = a:cmd
     if exists("g:sudoDebug") && g:sudoDebug
-        let cmd = substitute(a:cmd, '2>'.shellescape(s:error_file), '', 'g')
+        " On Windows, s:error_file could be something like
+        " c:\Users\cbraba~1\... and one needs to escape the '~'
+        let cmd = substitute(a:cmd, '2>'.escape(shellescape(s:error_file), '~'), '', 'g')
         let cmd = 'verb '. cmd
         call <sid>echoWarn(cmd)
         exe cmd
@@ -416,6 +424,16 @@ fu! <sid>Exec(cmd) "{{{2
         let error=readfile(s:error_file)
         let s:msg += error
         call delete(s:error_file)
+    endif
+endfu
+fu! <sid>SetBufName(file) "{{{2
+    if bufname('') !=# fnameescape(a:file)
+        " don't give the "ATTENTION" message when an existing swap file is
+        " found.
+        let sshm = &shortmess
+        set shortmess+=A
+        exe "sil f" fnameescape(a:file)
+        let &shortmess = sshm
     endif
 endfu
 fu! SudoEdit#Rmdir(dir) "{{{2
@@ -450,19 +468,23 @@ fu! SudoEdit#SudoDo(readflag, force, file) range "{{{2
             endif
         else
             exe a:firstline . ',' . a:lastline . 'call <sid>SudoWrite(file)'
-            exe "f" fnameescape(a:file)
+            call <sid>SetBufName(a:file)
             call add(s:msg, <sid>Stats(file))
         endif
     catch /sudo:writeError/
         " output error message (only the last line)
-        call <sid>Exception("There was an error writing the file! ".
+        if !empty(s:msg)
+            call <sid>Exception("There was an error writing the file! ".
                     \ substitute(s:msg[-1], "\n(.*)$", "\1", ''))
+        endif
         let s:skip_wundo = 1
         return
     catch /sudo:readError/
-        " output error message (only the last line)
-        call <sid>Exception("There was an error reading the file ". file. " !". 
-                    \ substitute(s:msg[-1], "\n(.*)$", "\1", ''))
+        if !empty(s:msg)
+            " output error message (only the last line)
+            call <sid>Exception("There was an error reading the file ". file. " !". 
+                        \ substitute(s:msg[-1], "\n(.*)$", "\1", ''))
+        endif
         " skip writing the undofile, it will most likely also fail.
         let s:skip_wundo = 1
         return

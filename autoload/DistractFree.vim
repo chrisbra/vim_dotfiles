@@ -54,7 +54,8 @@ fu! <sid>Init() " {{{2
 				\ 'relativenumber': 0, 'linebreak': 1, 'wrap': 1, 'g:statusline': '%#Normal#',
 				\ 'l:statusline': '%#Normal#', 'cursorline': 0, 'cursorcolumn': 0,
 				\ 'ruler': 0, 'guioptions': '', 'fillchars':  'vert: ', 'showtabline': 0,
-				\ 'showbreak': '', 'foldenable': 0, 'tabline': '', 'guitablabel': '', 'lazyredraw': 1}
+				\ 'showbreak': '', 'foldenable': 0, 'tabline': '', 'guitablabel': '', 'lazyredraw': 1,
+				\ 'breakindent': 1}
 
     " Given the desired column width, and minimum sidebar width, determine
     " the minimum window width necessary for splitting to make sense
@@ -129,10 +130,6 @@ fu! <sid>SaveRestore(save) " {{{2
 			" prevent CSApprox from kicking in...
 			exe "noa colorscheme" fnamemodify(g:distractfree_colorscheme, ':r')
 		endif
-        " Set highlighting
-        " for hi in ['VertSplit', 'NonText', 'SignColumn']
-        "    call <sid>ResetHi(hi)
-        " endfor
     else
 		unlet! s:main_buffer
 		unlet! g:colors_name
@@ -146,6 +143,10 @@ fu! <sid>SaveRestore(save) " {{{2
 			let &guifont = s:guifont
 		endif
 		for [opt, val] in items(s:_opts)
+			" Check, that the option is actually supported
+			if !exists('+'.(opt =~ '^[glw]:' ? 'opt[2:]' : opt))
+				continue " option not supported, skip
+			endif
 			exe 'let &'.(opt =~ '^[glw]:' ? '' : 'l:').opt. '="'. val.'"'
 			if (opt == 'g:statusline')
 				" Enable airline statusline
@@ -158,24 +159,6 @@ fu! <sid>SaveRestore(save) " {{{2
 		endfor
     endif
 endfu
-
-fu! <sid>ResetHi(group) "{{{2
-	" not needed anymore
-	" Resets a:group to Normal highlighting group
-	if !exists("s:default_hi")
-		redir => s:default_hi | sil! hi Normal | redir END
-		let s:default_hi = substitute(s:default_hi, 'font=.*$', '', '')
-		let s:default_hi = substitute(s:default_hi, '.*xxx\s*\(.*$\)', '\1', '')
-		let s:default_hi = substitute(s:default_hi, '\w*fg=\S*', '', 'g')
-		let s:default_hi = substitute(s:default_hi, '\(\w*\)bg=\(\S*\)', '\0 \1fg=\2', 'g')
-	endif
-	if s:default_hi == 'cleared'
-		exe "sil syn clear" a:group
-	else
-		exe "sil hi" a:group s:default_hi
-	endif
-endfu
-
 fu! <sid>NewWindow(cmd) "{{{2
 	"call <sid>WarningMsg(printf("%s noa sil %s",(exists(":noswapfile") ? ':noswapfile': ''),a:cmd),0)
 	" needs some 7.4.1XX patch
@@ -372,7 +355,7 @@ fu! DistractFree#DistractFreeToggle() "{{{2
 				augroup END
 				augroup! DistractFreeMain
 			endif
-			if exists("g:distractfree_hook") && get(g:distractfree_hook, 'stop', 0) != 0
+			if exists("g:distractfree_hook") && has_key(g:distractfree_hook, 'stop') && !empty(g:distractfree_hook.stop)
 				exe g:distractfree_hook['stop']
 			endif
 			if exists("#airline")
@@ -423,7 +406,7 @@ fu! DistractFree#DistractFreeToggle() "{{{2
 			call <sid>ResetStl(0)
 		endif
 
-        if exists("g:distractfree_hook") && get(g:distractfree_hook, 'start', 0) != 0
+        if exists("g:distractfree_hook") && has_key(g:distractfree_hook, 'start') && !empty(g:distractfree_hook.start)
             exe g:distractfree_hook['start']
         endif
 		" exe "windo | if winnr() !=".winnr(). "|let &l:stl='%#Normal#'|endif"

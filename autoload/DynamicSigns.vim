@@ -153,6 +153,10 @@ fu! <sid>Init(...) "{{{1
 	if !exists("s:gui_running") 
 		let s:gui_running = has("gui_running")
 	endif
+	" highlight line
+	if hlID("SignLine")
+		exe "hi SignLine ctermbg=238 guibg=#403D3D"
+	endif
 
 	" Highlighting for the bookmarks
 	if !exists("s:BookmarkSignsHL")
@@ -242,6 +246,9 @@ fu! <sid>AuCmd(arg) "{{{1
 				au CursorHold,CursorHoldI * 
 					\ call DynamicSigns#UpdateWindowSigns('marks')
 			endif
+			" make sure, sign expression is reevaluated on changes to
+			" the buffer
+			au TextChanged * call DynamicSigns#UpdateWindowSigns('alternate,diff,marks,whitespace,indentation')
 		augroup END
 	else
 		augroup Signs
@@ -484,9 +491,11 @@ fu! <sid>DefineSigns() "{{{1
 	"
 	" Custom Signs Hooks
 	for sign in ['OK', 'Warning', 'Error', 'Info', 'Add', 'Arrow', 'Flag',
-		\ 'Delete', 'Stop']
+		\ 'Delete', 'Stop', 'Line']
 		let icn  = (icon ? 'icon='. s:i_path : '')
 		let text = ""
+		let texthl = ''
+		let line = 0
 		if sign ==     'OK'
 			let text = (utf8signs ? '✓' : 'OK')
 			let icn  = (empty(icn) ? '' : icn . 'checkmark.bmp')
@@ -514,10 +523,16 @@ fu! <sid>DefineSigns() "{{{1
 		elseif sign == 'Stop'
 			let text = 'ST'
 			let icn  = (empty(icn) ? '' : icn . 'stop.bmp')
+		elseif sign == 'Line'
+			let icn  = ''
+			let line = 1
+			let texthl = 'Normal'
 		endif
 
-		let def = printf("sign define SignCustom%s text=%s texthl=%s " .
-			\ "%s", sign, text, s:id_hl.Error, icn)
+		let def = printf("sign define SignCustom%s %s texthl=%s %s %s", 
+			\ sign, (!empty(text) ? "text=".text : ''),
+			\ empty(texthl) ? s:id_hl.Error : texthl, icn,
+			\ (line ? 'linehl=SignLine' : ''))
 		call <sid>DefineSignsIcons(def)
 	endfor
 
@@ -626,13 +641,13 @@ fu! <sid>ReturnDiffSigns() "{{{1
 endfu
 
 fu! <sid>UpdateView(force) "{{{1
-	if !exists("b:changes_chg_tick")
-		let b:changes_chg_tick = 0
+	if !exists("b:dynamicsigns_tick")
+		let b:dynamicsigns_tick = 0
 	endif
 	" Only update, if there have been changes to the buffer
-	if b:changes_chg_tick != b:changedtick || a:force
+	if b:dynamicsigns_tick != b:changedtick || a:force
 		call DynamicSigns#Run()
-		let b:changes_chg_tick = b:changedtick
+		let b:dynamicsigns_tick = b:changedtick
 	endif
 endfu
 
@@ -895,13 +910,13 @@ fu! <sid>PlaceSignHook(line) "{{{1
 			let a = eval(expr)
 			let result = matchstr(a,
 				\'Warning\|OK\|Error\|Info\|Add\|Arrow\|Flag\|'.
-				\ 'Delete\|Stop')
+				\ 'Delete\|Stop\|Line')
 			if empty(result)
 				let result = 'Info'
 			endif
 			let oldSign = match(s:Signs, 'line='. a:line.
-					\ '\D.*name=SignCustom'.result)
-			if a
+					\ '\D.*name=SignCustom')
+			if a || !empty(a)
 				if oldSign == -1
 					exe "sign place " s:sign_prefix. a:line. " line=". a:line.
 						\ " name=SignCustom". result. " buffer=". bufnr('')
@@ -914,7 +929,7 @@ fu! <sid>PlaceSignHook(line) "{{{1
 			return 0
 		catch
 			let s:SignHook = ''
-			call add(s:msg, 'Error evaluating SignExpression at '. line)
+			call add(s:msg, 'Error evaluating SignExpression at '. a:line)
 			call add(s:msg, v:exception)
 			call <sid>WarningMsg()
 			return -1
@@ -1078,8 +1093,8 @@ fu! DynamicSigns#UpdateWindowSigns(ignorepat) "{{{1
 	let _a = winsaveview()
 	" remove old matches first...
 	call <sid>UnMatchHL()
-	if !exists("b:changes_chg_tick")
-		let b:changes_chg_tick = 0
+	if !exists("b:dynamicsigns_tick")
+		let b:dynamicsigns_tick = 0
 	endif
 	try
 		call <sid>Init()
@@ -1091,8 +1106,8 @@ fu! DynamicSigns#UpdateWindowSigns(ignorepat) "{{{1
 		return
 	endtry
 	" Only update, if there have been changes to the buffer
-	if b:changes_chg_tick != b:changedtick
-		let b:changes_chg_tick = b:changedtick
+	if b:dynamicsigns_tick != b:changedtick
+		let b:dynamicsigns_tick = b:changedtick
 		if !s:SignScrollbar
 			call <sid>PlaceSigns(line('w0'), line('w$'))
 		endif
@@ -1101,6 +1116,11 @@ fu! DynamicSigns#UpdateWindowSigns(ignorepat) "{{{1
 	endif
 	if s:SignScrollbar
 		call DynamicSigns#UpdateScrollbarSigns()
+	endif
+	if s:SignHook
+		let s:ignore = ['alternate', 'diff', 'marks', 'whitespace', 'indentation']
+		exe printf(":%d,%dfolddoopen :call <snr>%d_PlaceSignHook(line('.'))",
+			\ line('w0'), line('w$'), s:sid)
 	endif
 	if s:BookmarkSigns
 		call <sid>DoBookmarkHL()
@@ -1224,11 +1244,17 @@ fu! DynamicSigns#CleanUp() "{{{1
 	endif
 	call <sid>AuCmd(0)
 	unlet! s:precheck s:SignDef
+	redraw!
 endfu
 
 fu! DynamicSigns#PrepareSignExpression(arg) "{{{1
 	let g:Signs_Hook = a:arg
+	let old_ignore = s:ignore
+	" only update the sign expression
+	let s:ignore = ['alternate', 'diff', 'marks', 'whitespace', 'indentation']
+	call <sid>Init()
 	call DynamicSigns#Run()
+	let s:ignore = old_ignore
 endfu
 
 fu! <sid>MySortBookmarks(a, b) "{{{¹

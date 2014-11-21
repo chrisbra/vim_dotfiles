@@ -1,12 +1,13 @@
 *ChangesPlugin.txt*  Print indication of changed lines for a buffer
+
 Author:  Christian Brabandt <cb@256bit.org>
 Version: 0.14 Wed, 14 Aug 2013 22:10:39 +0200
-Copyright: (c) 2010-2013 by Christian Brabandt
+Copyright: (c) 2010-2014 by Christian Brabandt
 
                                            *ChangesPlugin-copyright*
 The VIM LICENSE applies to ChangesPlugin.txt (see |copyright|)
-except use unicode instead of "Vim".  NO WARRANTY, EXPRESS OR
-IMPLIED.  USE AT-YOUR-OWN-RISK.
+except use ChangesPlugin instead of "Vim".  NO WARRANTY, EXPRESS OR
+IMPLIED. USE AT-YOUR-OWN-RISK.
 
 ==============================================================================
 1. Contents                                                   *ChangesPlugin*
@@ -16,11 +17,11 @@ IMPLIED.  USE AT-YOUR-OWN-RISK.
   3.  Configuration.................................: |ChangesPlugin-Config|
   4.  ChangesPlugin Feedback........................: |ChangesPlugin-Feedback|
   5.  ChangesPlugin History.........................: |ChangesPlugin-history|
-
 ==============================================================================
 
                                                        *ChangesPlugin-manual*
 2. Functionality
+----------------
 
 This plugin was written to help visualize which lines have been changes since
 editing started for a file. The plugin was inspired by so called changed-bars,
@@ -31,15 +32,13 @@ or Visual Studio where it is called indicator margin (see
 http://blog.eveningcreek.com/?p=151).
 
 ChangesPlugin.vim uses the |diff|-feature of vim and compares the actual
-buffer with it's saved state. In order to highlight the indicator signs at the
-first column, its using |signs|. For newly added lines, the first column will
-be displayed with a leading '+' and highlighted using the DiffAdd highlighting
-(see |hl-DiffAdd|), deleted lines will be indicated by a '-' with a
-DiffDelete highlighting (see |hl-DiffDelete|) and modified lines will be
-displayed using '*' and a DiffChange highlighting (see |hl-DiffChange|).
+buffer with it's saved state (or possibly against a state in a repository).
+In order to highlight the indicator signs at the first column, its using
+|signs|. For a description of the highlighting and how to customize it see
+|ChangesPlugin-colors|
 
-Note, that a '-' will be shown on the next line after the deleted lines. A
-range of consecutive deleted lines will be displayed by only one '-'
+Note, that a '-' indicates, that at least one line was deleted between that
+particular line and the following line.
 
 This means, that in order to use this plugin you need a vim, that was built
 with |+signs|-support and |+diff|-support and you also need an executable diff
@@ -49,7 +48,7 @@ warning and abort.
 The plugin does not place signs on lines, on which a sign was already placed
 (by e.g. another plugin).
 
-                                                         *:EC* *:EnableChanges*
+                                                        *:EC* *:EnableChanges*
 By default the plugin is not enabled. To enable it enter >
     :EnableChanges
 When you run this command, ChangesPlugin.vim diffs the current file agains
@@ -69,14 +68,14 @@ If errors happen, the current buffer will be silently ignored when :EC
 is called later. Use the ! attribute, to force reevaluating the command (and
 see error messages).
 
-                                                        *:DC* *:DisableChanges*
+                                                    *:DC* *:DisableChanges*
 If you want to disable the plugin, enter >
     :DisableChanges
 or alternatively, you can enter the shortcut >
      :DC
 and the Display of Changes will be disabled.
 
-                                                     *:TCV* *:ToggleChangeView*
+                                                    *:TCV* *:ToggleChangeView*
 You can toggle, between turning on and off the indicator bars, using >
      :ToggleChangeView
 or alternatively: >
@@ -113,6 +112,43 @@ If you issue any of these commands, a vertical split buffer will open,
 that contains the changes from either your VCS or from the unmodified buffer
 as it is saved on disk. See |copy-diffs| for how to merge changes between
 those two buffers.
+
+                                                 *:CF* *:ChangesFoldDiff*
+To temporarily fold aways all non-modified lines, you can use the :CF
+command >
+    :CF
+and >
+    :ChangesFoldDiff
+
+The non-bang versions of those commands will fold away all lines, that were
+not modified and the bang-versions (:CF!/:ChangesFoldDiff!) will reset
+the folding.
+
+                                                 *:CT* *:ChangesStyleToggle*
+This command changes how changed lines will be highlighted. It toggles between
+three states. Initially changed lines will only be indicated by a sign in the
+first column. After toggling, the sign will be displayed and additionally, all
+lines will be highlighted. After calling it a second time, all lines will be
+highlighted, but there won't be an indicator sign in the first line. Use: >
+    :CT
+and >
+    :ChangesStyleToggle
+
+To toggle between all states.
+                                                *:ChangesStageCurrentHunk*
+Stages the hunk, the cursor is currently on (works only for git). This is like
+incrementally save only part of a diff and commit it separately so that your
+commit histoy is cleaner. Use: >
+
+    :ChangesStageCurrentHunk
+< 
+to stage the hunk the cursor is currently on. Use: >
+
+    :ChangesStageCurrentHunk!
+
+to revert a staged hunk. Note: The cursor needs to be on a line, that has been
+staged or that is on a diff.
+
                                                 *ChangesPlugin-Maps* *[h* *]h*
 ChangesPlugin also sets up some mappings to move from one changed line to
 another. By default, those mappings are defined:
@@ -120,7 +156,11 @@ another. By default, those mappings are defined:
 `[h`        move backwards to the next changed line,
 `]h`        moves forward to the next changed line.
                                                                     *v_ah*
-`ah`        selects the current hunk (only in Visual and Operator pending mode)
+`ah`        selects the current hunk (only in Visual and Operator pending
+          mode)
+                                                                *<Leader>h*
+`<Leader>h` selects the current hunk and stages it. (only possible for git).
+`<Leader>H` selects the staged hunk and reverts it. (only possible for git).
 
 ==============================================================================
                                                         *ChangesPlugin-Config*
@@ -128,17 +168,6 @@ another. By default, those mappings are defined:
 
 There are several different configuration options available.
 
-                                                        *ChangesPlugin-hlLine*
-g:changes_hl_lines (default: 0)
--------------------------------
-
-By default, ChangesPlugin.vim will only indicate a change in the first column.
-Setting g:changes_hl_lines to 1 will highlight the whole line. By default this
-variable is unset (which is the same as setting it to 0).
-If you'd like to have this, set this variable in your |.vimrc| >
-
-    :let g:changes_hl_lines=1
-<
                                                         *ChangesPlugin-aucmd*
 g:changes_autocmd (default: 1)
 ------------------------------
@@ -172,15 +201,13 @@ Currently, ChangesPlugin supports these VCS Systems:
     - bzr
     - darcs
     - fossil
-    - svk
     - RCS
 
-To enable this feature, you need to set the variable g:changes_vcs_check to
-1. ChangesPlugin will then try to auto-detect, which of the above supported
-VCS-Systems is in use. That means, if it can't detect neither of git, cvs,
-svn, bzr or hg it will assume you are using svk. This may fail obviously, so
-you can always force ChangesPlugin to use any of the above by setting the
-g:changes_vcs_system Variable.
+To enable this feature, you need to set the variable g:changes_vcs_check to 1.
+ChangesPlugin will then try to auto-detect, which of the above supported
+VCS-Systems is in use. This may fail obviously, so you can always force
+ChangesPlugin to use any of the above by setting the g:changes_vcs_system
+Variable.
 
 To enable this feature, you need to set the g:changes_vcs_check variable to 1.
 The following example enables this feature and ensures, EnablePlugin is using
@@ -192,6 +219,10 @@ git as VCS, so these lines have been entered in the |.vimrc| >
 Note, that depending on the VCS System you use, this might slow down
 ChangesPlugin significantly. Especially CVS seems to be very slow.
 
+To only specify a specific VCS for a certain buffer, set the buffer-local
+variable `b:changes_vcs_system` in that particular buffer. That overrides the
+global variable `g:changes_vcs_system`.
+
 Note also, that setting g:changes_vcs_system is setting a global variable (see
 |g:-var|) and therefore would set the VCS for every buffer opened in vim (thus
 you could use changesPlugin only with one single VCS). However, guessing the
@@ -199,7 +230,7 @@ VCS System should work fairely well and in case it doesn't, please report a
 bug to the maintainer of the plugin. Setting g:changes_vcs_check will however
 disable the check against the on-disk version of a buffer.
 
-                                                        *ChangesPlugin-preview*
+                                                    *ChangesPlugin-preview*
 g:changes_diff_preview (default: 0)
 ----------------------------------
 
@@ -215,7 +246,7 @@ are displayed.
 g:changes_respect_SignColumn (default 0)
 ----------------------------------------
 
-    If set, will reset the highlighting color of the Sign Column to that of
+    If set, will not reset the highlighting color of the Sign Column to that of
     the Normal Highlighting group.
 
 g:changes_sign_text_utf8 (default 1)
@@ -225,29 +256,64 @@ g:changes_sign_text_utf8 (default 1)
     signs.
 
                                                         *ChangesPlugin-colors*
+Specify different colors
+------------------------
 
-3.4 Specify different colors
-----------------------------
+By default, changes Plugin uses 3 different colors for highlighting changes
+to the buffer. Added Lines will be highlighted in green, Modified lines in
+blue and deleted lines will be highlighted in yellow, where the first line
+of a number of consecutive lines will be additionally marked by a letter
+(or a nice gui icon, if your Vim version supports it [usually only the gui
+version]).
 
-changesVim uses the highlighting used for |diff| mode to indicate the change
-in a buffer. This is consistent, since when you're already used to |vimdiff|
-you'll probably also know the highlighting. If for any reason you do not like
-the colors, you have to define your own highlighting items.
-If for example you want the DiffAdd highlighting to be displayed like White on
-a Blue background, you can define it as follows in your |.vimrc| >
+If you want to changes those colors, you can define your own custom
+highlighting. For example, you can place the following lines in your
+|.vimrc| >
 
-    :hi DiffAdd term=bold ctermbg=4 guibg=DarkBlue
+    hi ChangesSignTextAdd ctermbg=yellow ctermfg=black guibg=green
+    hi ChangesSignTextDel ctermbg=white  ctermfg=black guibg=red
+    hi ChangesSignTextCh  ctermbg=black  ctermfg=white guibg=blue
 
-In the same way, you can change DiffDelete for indicating deleted lines and
-DiffChange for indicating modified lines. You can also specify your favorite
-highlighting colors using your own build |colorscheme|.
+g:changes_linehi_diff (default: 0)
+----------------------------------
 
+    If set, will use Cursorline highlighting to overlay within a line the
+    changes. Use |:DC| and |:EC| to reset all highlighting. Note, will only
+    highlight changes, that have happened within the current editing session
+    (does not attempt to parse the VCS diff to try to figure the differences
+    out). Note: Currently very experimental!
+
+                                                        *ChangesPlugin-Signcol*
+g:changes_fixed_sign_column (default: 0)
+----------------------------------------
+
+When set, ChangesPlugin always tries to have the sign column visible, so that
+modifying the buffer won't make it "shift" because of a sudden disappearing or
+appearing SignColumn (|hl-SignColumn|) To enable, set in your |.vimrc| >
+
+    let g:changes_fixed_sign_column=1
+<
+g:changes_fast (default: 1)
+--------------------------
+If set (which it is by default), skip creating diffs at a couple occasions.
+
+Currently the following features are disabled, when g:changes_fast is set:
+    - update within a row for small changes (e.g. hitting 'rx' repeatedly in
+      the same row)
+    - InsertEnter/InsertLeave autocommands to update signs
+    - When inserting a new line in the buffer, update signs
+
+While those features are disabled, this also means Vim is more responsive,
+since it does not need to diff the buffer that often (at the cost of being
+slightly more imprecise).
+
+If you want to enable those settings, set in your |.vimrc| >
+
+    let g:changes_fast=0
+<
                                                         *ChangesPlugin-errors*
-3.6 Get error messages
-----------------------
-
 By default the plugin will not display error messages. If you want to see
-them, set the 'verbose' option to 1.
+them, set the 'verbose' option to 1 (or even 2).
 
 ==============================================================================
 4. ChangesPlugin Feedback                           *ChangesPlugin-feedback*
@@ -263,7 +329,7 @@ Please don't hesitate to report any bugs to the maintainer, mentioned in the
 third line of this document.
 
 ==============================================================================
-5. ChangesPlugin History                                *ChangesPlugin-history*
+5. ChangesPlugin History                             *ChangesPlugin-history*
 
     BF: Bugfix
     NF: New Feature
@@ -274,6 +340,41 @@ third line of this document.
         NF: Hide SignColumn
         NF: include some nice looking icons for gvim
         BF: Code cleanup
+        BF: resolve symlinks
+        NF: airline integration
+        NF: |:CF|
+        NF: |:CT|
+        BF: only draw at most one deleted sign, if a range of several
+            consecutive lines have been deleted
+        NF: only place newly changed lines (instead of always removing all
+            previous signs and adding them again)
+        NF: if g:changes_linehi_diff is set, tries to highlight changes within
+            a line by overlaying |CursorColumn| highlighting over that parts.
+        BF: try to skip expensive TextChanged calls if possible.
+        BF: detect other signs correctly (didn't work with non-english locale)
+        BF: do not try to detect changes on vim help files and read only files
+        BF: calling |:DC| twice would cause an error
+        BF: Make use of patch 7.4.341
+        BF: When undefining signs and starting the gui, make sure no
+           '[Deleted]' signs are left over
+        BF: Clear SignColumn before linking it to Normal group
+        BF: Make sure a warning message is shown for |:EC|
+        BF: Catch |E255| when defining signs
+        BF: prevent recursively calling |FocusGained| autocommand on windows
+        NF: |ChangesPlugin-Signcol|
+        BF: if vim-gitgutter is installed and the current buffer is handled by
+            vim-gitgutter, let gitgutter handle the current buffer (issue
+            https://github.com/chrisbra/changesPlugin/issues/12, reported by
+            Gray-Wind, thanks!)
+        NF: g:changes_fast variable (to enable more correct at the cost of
+            being possibly slower placement of signs).
+        BF: when updating signs, make sure that the first line of a
+            consecutive number has the correcty type
+        NF: In insert mode, when <CR> is pressed, update the signs immediately
+        NF: InsertEnter/Leave autocommands to update signs
+        NF: Stage hunks for git
+        NF: Ignore special buffers (help window, quickfix buffer, command line
+        window..)
     0.14: Aug 14, 2013:                                                 {{{1
         BF: Exception not caught (reported by Marco, thanks!)
         BF: Prevent flickering by resetting SignColumn on
@@ -378,4 +479,4 @@ third line of this document.
         First working version
 Modeline: {{{1
 ==============================================================================
-vim:tw=78:ts=8:ft=help:et:fdm=marker:fdl=0
+vim:tw=76:ts=8:ft=help:et:fdm=marker:fdl=0

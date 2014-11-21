@@ -7,6 +7,7 @@
 :BufTimerReport	BufTimer.txt	/*:BufTimerReport*
 :CC	ChangesPlugin.txt	/*:CC*
 :CD	ChangesPlugin.txt	/*:CD*
+:CF	ChangesPlugin.txt	/*:CF*
 :CL	ChangesPlugin.txt	/*:CL*
 :CSApproxSnapshot	CSApprox.txt	/*:CSApproxSnapshot*
 :CSVAddColumn	ft-csv.txt	/*:CSVAddColumn*
@@ -37,9 +38,13 @@
 :CSVVHeaderToggle	ft-csv.txt	/*:CSVVHeaderToggle*
 :CSVVertFold	ft-csv.txt	/*:CSVVertFold*
 :CSVWhatColumn	ft-csv.txt	/*:CSVWhatColumn*
+:CT	ChangesPlugin.txt	/*:CT*
 :ChangesCaption	ChangesPlugin.txt	/*:ChangesCaption*
 :ChangesDiffMode	ChangesPlugin.txt	/*:ChangesDiffMode*
+:ChangesFoldDiff	ChangesPlugin.txt	/*:ChangesFoldDiff*
 :ChangesLineOverview	ChangesPlugin.txt	/*:ChangesLineOverview*
+:ChangesStageCurrentHunk	ChangesPlugin.txt	/*:ChangesStageCurrentHunk*
+:ChangesStyleToggle	ChangesPlugin.txt	/*:ChangesStyleToggle*
 :ColorClear	Colorizer.txt	/*:ColorClear*
 :ColorContrast	Colorizer.txt	/*:ColorContrast*
 :ColorHighlight	Colorizer.txt	/*:ColorHighlight*
@@ -77,6 +82,7 @@
 :SaveSigns	savesigns.txt	/*:SaveSigns*
 :ScreenCapture	Replay.txt	/*:ScreenCapture*
 :SearchUnicode	unicode.txt	/*:SearchUnicode*
+:ShowWhiteToggle	ShowWhitespace.txt	/*:ShowWhiteToggle*
 :Signs-Autocommands	DynamicSigns.txt	/*:Signs-Autocommands*
 :Signs-Commands	DynamicSigns.txt	/*:Signs-Commands*
 :StartRecord	Replay.txt	/*:StartRecord*
@@ -88,6 +94,7 @@
 :UnicodeName	unicode.txt	/*:UnicodeName*
 :UnicodeTable	unicode.txt	/*:UnicodeTable*
 :WidenRegion	NarrowRegion.txt	/*:WidenRegion*
+<Leader>h	ChangesPlugin.txt	/*<Leader>h*
 <Plug>(MakeDigraph)	unicode.txt	/*<Plug>(MakeDigraph)*
 <Plug>(UnicodeGA)	unicode.txt	/*<Plug>(UnicodeGA)*
 <Plug>(UnicodeSwapCompleteName)	unicode.txt	/*<Plug>(UnicodeSwapCompleteName)*
@@ -153,10 +160,12 @@ CSVCol()	ft-csv.txt	/*CSVCol()*
 CSVField()	ft-csv.txt	/*CSVField()*
 CSVFixed	ft-csv.txt	/*CSVFixed*
 CSVPat()	ft-csv.txt	/*CSVPat()*
+CSVSum()	ft-csv.txt	/*CSVSum()*
 CSV_WCol()	ft-csv.txt	/*CSV_WCol()*
 ChangesPlugin	ChangesPlugin.txt	/*ChangesPlugin*
 ChangesPlugin-Config	ChangesPlugin.txt	/*ChangesPlugin-Config*
 ChangesPlugin-Maps	ChangesPlugin.txt	/*ChangesPlugin-Maps*
+ChangesPlugin-Signcol	ChangesPlugin.txt	/*ChangesPlugin-Signcol*
 ChangesPlugin-VCS	ChangesPlugin.txt	/*ChangesPlugin-VCS*
 ChangesPlugin-aucmd	ChangesPlugin.txt	/*ChangesPlugin-aucmd*
 ChangesPlugin-colors	ChangesPlugin.txt	/*ChangesPlugin-colors*
@@ -164,7 +173,6 @@ ChangesPlugin-copyright	ChangesPlugin.txt	/*ChangesPlugin-copyright*
 ChangesPlugin-errors	ChangesPlugin.txt	/*ChangesPlugin-errors*
 ChangesPlugin-feedback	ChangesPlugin.txt	/*ChangesPlugin-feedback*
 ChangesPlugin-history	ChangesPlugin.txt	/*ChangesPlugin-history*
-ChangesPlugin-hlLine	ChangesPlugin.txt	/*ChangesPlugin-hlLine*
 ChangesPlugin-manual	ChangesPlugin.txt	/*ChangesPlugin-manual*
 ChangesPlugin-preview	ChangesPlugin.txt	/*ChangesPlugin-preview*
 ChangesPlugin.txt	ChangesPlugin.txt	/*ChangesPlugin.txt*
@@ -188,6 +196,7 @@ Colorizer-manual	Colorizer.txt	/*Colorizer-manual*
 Colorizer-maps	Colorizer.txt	/*Colorizer-maps*
 Colorizer-names	Colorizer.txt	/*Colorizer-names*
 Colorizer-pattern	Colorizer.txt	/*Colorizer-pattern*
+Colorizer-slowdown	Colorizer.txt	/*Colorizer-slowdown*
 Colorizer-syntax	Colorizer.txt	/*Colorizer-syntax*
 Colorizer-taskwarrior-files	Colorizer.txt	/*Colorizer-taskwarrior-files*
 Colorizer-tips	Colorizer.txt	/*Colorizer-tips*
@@ -261,6 +270,13 @@ Replay-speed	Replay.txt	/*Replay-speed*
 Replay.txt	Replay.txt	/*Replay.txt*
 ReplayPlugin	Replay.txt	/*ReplayPlugin*
 SearchInColumn_CSV	ft-csv.txt	/*SearchInColumn_CSV*
+ShowWhiteMapping	ShowWhitespace.txt	/*ShowWhiteMapping*
+ShowWhitespace-config	ShowWhitespace.txt	/*ShowWhitespace-config*
+ShowWhitespace-feedback	ShowWhitespace.txt	/*ShowWhitespace-feedback*
+ShowWhitespace-history	ShowWhitespace.txt	/*ShowWhitespace-history*
+ShowWhitespace-manual	ShowWhitespace.txt	/*ShowWhitespace-manual*
+ShowWhitespace.txt	ShowWhitespace.txt	/*ShowWhitespace.txt*
+ShowWhitespacePlugin	ShowWhitespace.txt	/*ShowWhitespacePlugin*
 Signs-Alternate	DynamicSigns.txt	/*Signs-Alternate*
 Signs-Diff	DynamicSigns.txt	/*Signs-Diff*
 Signs-Feedback	DynamicSigns.txt	/*Signs-Feedback*
@@ -443,6 +459,7 @@ faq-11.22	vim_faq.txt	/*faq-11.22*
 faq-11.23	vim_faq.txt	/*faq-11.23*
 faq-11.24	vim_faq.txt	/*faq-11.24*
 faq-11.25	vim_faq.txt	/*faq-11.25*
+faq-11.26	vim_faq.txt	/*faq-11.26*
 faq-11.3	vim_faq.txt	/*faq-11.3*
 faq-11.4	vim_faq.txt	/*faq-11.4*
 faq-11.5	vim_faq.txt	/*faq-11.5*
@@ -708,6 +725,7 @@ faq-31.12	vim_faq.txt	/*faq-31.12*
 faq-31.13	vim_faq.txt	/*faq-31.13*
 faq-31.14	vim_faq.txt	/*faq-31.14*
 faq-31.15	vim_faq.txt	/*faq-31.15*
+faq-31.16	vim_faq.txt	/*faq-31.16*
 faq-31.2	vim_faq.txt	/*faq-31.2*
 faq-31.3	vim_faq.txt	/*faq-31.3*
 faq-31.4	vim_faq.txt	/*faq-31.4*
@@ -921,6 +939,7 @@ i_CTRL-X_CTRL-Z	unicode.txt	/*i_CTRL-X_CTRL-Z*
 improvedft-Bugs	ft_improved.txt	/*improvedft-Bugs*
 improvedft-Disable	ft_improved.txt	/*improvedft-Disable*
 improvedft-Enable	ft_improved.txt	/*improvedft-Enable*
+improvedft-Mapping	ft_improved.txt	/*improvedft-Mapping*
 improvedft-Tips	ft_improved.txt	/*improvedft-Tips*
 improvedft-YankRing	ft_improved.txt	/*improvedft-YankRing*
 improvedft-feedback	ft_improved.txt	/*improvedft-feedback*

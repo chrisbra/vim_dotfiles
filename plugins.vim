@@ -51,7 +51,8 @@ let g:CSApprox_verbose_level=0
 "let g:csv_comment = '#'
 "let g:csv_hiHeader="DiffAdd"
 "let g:csv_disable_fdt=1
-"let g:csv_autocmd_arrange = 1
+let g:csv_autocmd_arrange = 1
+let g:csv_autocmd_arrange_size = 1024*500   " only enable automatic arranging of columns for files less than 1 MB
 "aug CSV_Editing
 "    au!
 "    au BufRead,BufWritePost *.csv :%ArrangeColumn
@@ -59,10 +60,22 @@ let g:CSApprox_verbose_level=0
 "aug end
 
 " ChangesPlugin:
-let g:changes_autocmd=1
+"let g:changes_autocmd=1
 let g:changes_verbose=0
 let g:changes_vcs_check=1
-let g:changes_sign_text_utf8=1
+let g:changes_fast=0 " slower but possibly more correct
+"let g:loaded_changes=1
+if !exists("$PUTTY_TERM")
+    let g:changes_sign_text_utf8=1
+endif
+let g:changes_debug=1
+let g:changes_fixed_sign_column=1
+"let g:changes_linehi_diff=1
+"let g:changes_diff_preview=0
+" use a different highlighting:
+" hi ChangesSignTextAdd ctermbg=yellow ctermfg=black guibg=green
+" hi ChangesSignTextDel ctermbg=white  ctermfg=black guibg=red
+" hi ChangesSignTextCh  ctermbg=black  ctermfg=white guibg=blue
 " disabled
 "let g:changes_loaded=1
 
@@ -105,7 +118,8 @@ let g:Signs_QFList = 0
 " ft_improved
 let g:ft_improved_multichars = 1
 let g:ft_improved_ignorecase = 1
-let g:ft_improved_nohighlight = 0
+"let g:ft_improved_nomap_comma = 1
+"let g:ft_improved_nohighlight = 0
 
 " DistractFree:
 let g:distractfree_colorscheme = "darkroom"
@@ -114,13 +128,17 @@ let g:distractfree_colorscheme = "darkroom"
 " Replay:
 let g:replay_record = 1
 
+" ShowWhiteSpace
+let g:showwhite_highlighting = 'ctermfg=7 ctermbg=NONE guifg=LightGrey guibg=NONE'
+nmap <F5> <Plug>ShowWhiteToggle
+
 " Powerline:
 " disabled
 let g:Powerline_loaded = 1
 
 " Airline:
 " enable smart tabline
-let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#enabled = 0
 " enable/disable detection of whitespace errors. >
 let g:airline#extensions#whitespace#enabled = 0
 "let g:airline#extensions#tabline#buffer_nr_show = 1
@@ -129,13 +147,15 @@ if &encoding == "utf-8"
     let g:airline_symbols = {}
     " unicode symbols
     "let g:airline_left_sep = '»'
-    let g:airline_left_sep = '▶'
-    "let g:airline_right_sep = '«'
-    let g:airline_right_sep = '◀'
+    if !exists("$PUTTY_TERM")
+	let g:airline_left_sep = '▶'
+	"let g:airline_right_sep = '«'
+	let g:airline_right_sep = '◀'
+	let g:airline_symbols.branch = '⎇'
+    endif
     "let g:airline_symbols.linenr = '␊'
     "let g:airline_symbols.linenr = '␤'
     let g:airline_symbols.linenr = '¶'
-    let g:airline_symbols.branch = '⎇'
     "let g:airline_symbols.paste = 'ρ'
     let g:airline_symbols.paste = 'Þ'
     "let g:airline_symbols.paste = '∥'
@@ -144,6 +164,7 @@ if &encoding == "utf-8"
 endif
 
 " Neocomplcache:
+let g:loaded_neocomplcache = 1
 let g:neocomplcache_enable_at_startup = 1
 " Define keyword.
 if !exists('g:neocomplcache_keyword_patterns')
@@ -229,6 +250,20 @@ let g:tmuxline_preset = {
       \'z'    : '#H'}
 
 let g:tmuxline_powerline_separators=0
+
+" vim-gitgutter:
+" disabled
+let g:gitgutter_enabled = 0
+
+" Syntastic: only use passive mode
+let g:syntastic_mode_map = { 'mode': 'passive',
+			    \ 'active_filetypes': [],
+			    \ 'passive_filetypes': [] }
+
+" Neocomplete requires if_lua
+if !has('lua')
+    let g:loaded_neocomplete = 0
+endif
 
 " Unite: {{{
 "call unite#filters#matcher_default#use(['matcher_fuzzy'])

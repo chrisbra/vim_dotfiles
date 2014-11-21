@@ -7,28 +7,6 @@
 " License: VIM License
 " GetLatestVimScripts: 3068 18 :AutoInstall: recover.vim
 "
-fu! recover#Recover(on) "{{{1
-    if a:on
-	call s:ModifySTL(1)
-	if !exists("s:old_vsc")
-	    let s:old_vsc = v:swapchoice
-	endif
-	augroup Swap
-	    au!
-	    au SwapExists * nested :call recover#ConfirmSwapDiff()
-	    au BufWinEnter,InsertEnter,InsertLeave,FocusGained *
-			\ call <sid>CheckSwapFileExists()
-	augroup END
-    else
-	augroup Swap
-	    au!
-	augroup end
-	if exists("s:old_vsc")
-	    let v:swapchoice=s:old_vsc
-	endif
-    endif
-endfu
-
 fu! s:Swapname() "{{{1
     " Use sil! so a failing redir (e.g. recursive redir call)
     " won't hurt. (https://github.com/chrisbra/Recover.vim/pull/8)
@@ -40,7 +18,7 @@ fu! s:Swapname() "{{{1
     endif
 endfu
 
-fu! s:CheckSwapFileExists() "{{{1
+fu! recover#CheckSwapFileExists() "{{{1
     if !&swapfile
 	return
     endif
@@ -112,6 +90,7 @@ fu! recover#ConfirmSwapDiff() "{{{1
 	let v:swapchoice = b:swapchoice
 	return
     endif
+    call s:ModifySTL(1)
     let delete = 0
     let do_modification_check = exists("g:RecoverPlugin_Edit_Unmodified") ? g:RecoverPlugin_Edit_Unmodified : 0
     let not_modified = 0
@@ -222,7 +201,6 @@ fu! recover#ConfirmSwapDiff() "{{{1
 	" Don't show the Recovery dialog
 	let v:swapchoice='o'
 	call <sid>EchoMsg("Found SwapFile, opening file readonly!")
-	sleep 2
     elseif p == 4
 	" Recover
 	let v:swapchoice='r'
@@ -295,6 +273,7 @@ fu! recover#DiffRecoveredFile() "{{{1
     let b:swapbufnr = swapbufnr
     command! -buffer RecoverPluginFinish :FinishRecovery
     command! -buffer FinishRecovery :call recover#RecoverFinish()
+    command! -buffer RecoverPluginGet :1,$+1diffget|:FinishRecovery
     setl modified
 endfu
 
@@ -345,7 +324,7 @@ fu! s:ModifySTL(enable) "{{{1
 endfu
 
 fu! s:SetSwapfile() "{{{1
-    if &l:swf
+    if &l:swf && !empty(bufname(''))
 	" Reset swapfile to use .swp extension
 	sil setl noswapfile swapfile
     endif
@@ -373,7 +352,7 @@ fu! recover#RecoverFinish() abort "{{{1
     exe bufwinnr(b:swapbufnr) " wincmd w"
     diffoff
     bd!
-    call delete(swapname)
+    call delete(fnameescape(swapname))
     diffoff
     call s:ModifySTL(0)
     exe bufwinnr(curbufnr) " wincmd w"

@@ -209,6 +209,7 @@ looking at my Amazon whishlist: http://www.amazon.de/wishlist/2BKAHE8J7Z6UW
 - let width and height be set separately
 - Enable custom statusline during normal mode when
   g:distractfree_enable_normalmode_stl=1
+- Support 'breakindent' (needs at least Vim 7.4.338)
 0.5: Aug 14, 2013 {{{1
 - updated documentation by Ingo Karkat, Thanks!, issue #1
 - Make State of plugin avaivable to extern (patch by Ingo Karkat, Thanks!,
