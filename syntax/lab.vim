@@ -1,0 +1,1 @@
+syn region matlabClassBlock     transparent fold matchgroup=matlabClass extend start='\<function\>'        end='\%([%-+(\*\:(\/\[]\s*\)\@<!\<end\>\%(\s*[-+}\:\*\/()\]]\)\@!.*\($\n^\s*\)*$'re=e contains=ALLBUT,@matlabClassCluster,@matlabProceduralCluster nextgroup=matlabClassBlock skipempty
