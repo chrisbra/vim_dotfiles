@@ -10,28 +10,16 @@
 " Fold all regions except the visually selected one:
 vnoremap ,h :<c-u>1,'<lt>-fold<bar>'>+,$fold<CR>
 
-nmap <F7> :call ToggleFoldByCurrentSearchPattern()<CR>
-
-" mapping of CTRL-] to ALT-ß-ß for jumping in vim help files
-map \\ <C-]> 
+nnoremap <F7> :call ToggleFoldByCurrentSearchPattern()<CR>
 
 " don't mess up vim, when inserting with the mouse
 set pastetoggle=<F10> 
 
-" Insert last buffer with ^E in insert mode
-imap  pa
-" disallow opening the commandline window which by default is bound to 
-" q: (I tend to usually mean :q)
-" The commandline window is still accessible using q/ or q?
-" noremap q: :q
-" Pressing `Enter' inserts a new line
-" only if buffer is modifiable (e.g. not in help or quickfix window)
-" if (&ma)
-"    nmap <buffer> <CR> i<CR><ESC>
-" endif
-
 " In help files, map Enter to follow tags
-au BufWinEnter *.txt if(&ft =~ 'help')| nmap <buffer> <CR> <C-]> |endif
+augroup CustomHelp
+    au!
+    au BufWinEnter *.txt if(&ft =~ 'help')| nmap <buffer> <CR> <C-]> |endif
+augroup END
 
 " execute the command in the current line (minus the first word, which
 " is intended to be a shell prompt and needs to be $) and insert the 
@@ -40,24 +28,20 @@ nmap ,e ^wy$:r!<cword><CR>
 
 " map the DiffOrig command to  <leader>do
 " HINT: *d*iff with *o*riginal file
-"map <leader>do :silent! ShowDifferences<CR>
 map <leader>do :silent! call ToggleDiffOrig()<CR>
 
-" Scroll using the visible lines
-map j gj
-map k gk
 if exists("*pumvisible")
     inoremap <expr> <Down> pumvisible() ? "\<lt>Down>" : "\<lt>C-O>gj"
     inoremap <expr> <Up>   pumvisible() ? "\<lt>Up>"   : "\<lt>C-O>gk"
 else
-   inoremap <Down> <C-O>gj
-   inoremap <Up>   <C-O>gk
+   inoremap <Down> <C-\><C-O>gj
+   inoremap <Up>   <C-\><C-O>gk
 endif
 
 " Compile the currently editing Script
 " This can also be done by using
 " set makeprg (see help 'makeprg')
-nnoremap <F4> :call CompileScript()<CR>
+" nnoremap <F4> :call CompileScript()<CR>
 
 if has("gui")
     nmap <F2> :sil! :browse confirm save<CR>
@@ -83,13 +67,6 @@ endif
 "
 " Using par to reformat a file
 map ,V :%!par w50<CR>
-
-" Attach Files with muttng using \A
-" map __a_start :imap <C-V><CR> <C-O>__a_cmd\|imap <C-V><ESC> <C-V><ESC>__a_end\|imap <C-V><C-V><C-V><C-I> <C-V><C-N>\|imap <C-V><C-N> <C-V><C-X><C-V><C-F><CR>
-" noremap __a_end :iunmap <C-V><CR>\|iunmap <C-V><ESC>\|iunmap <C-V><C-V><C-V><C-I>\|iunmap <C-V><C-V><C-V><C-N><CR>dd`a:"ended.<CR>
-" noremap __a_cmd oAttach:<Space>
-" noremap __a_scmd 1G/^$/<CR>:noh<CR>OAttach:<Space>
-" map <leader>a ma__a_start__a_scmd
 
 " make n/N for search work more intuitevely
 " http://groups.google.com/group/vim_use/msg/6ff8586688e52b7d
@@ -121,6 +98,9 @@ endfu
 
 xnoremap * :<C-U>call <sid>VSetSearch('/')<CR>/<C-R>/<C-R>=@/<CR><CR>
 xnoremap # :<C-U>call <sid>VSetSearch('?')<CR>/<C-R>?<C-R>=@/<CR><CR>
+
+nnoremap <expr> j (v:count ? 'j' : 'gj')
+nnoremap <expr> k (v:count ? 'k' : 'gk')
 
 " ["x][N]""         List contents of the passed register / [N] named
 "                   registers / all registers (that typically contain
