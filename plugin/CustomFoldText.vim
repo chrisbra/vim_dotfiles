@@ -20,7 +20,11 @@ fu! CustomFoldText(string) "{{{1
 "   let line = substitute(line, matchstr(&l:cms,
 "	    \ '^.\{-}\ze%s').'\?\s*'. split(&l:fmr,',')[0].'\s*\d\+', '', '')
 
-    let w = winwidth(0) - &foldcolumn - (&number ? 8 : 0)
+    if get(g:, 'custom_foldtext_max_width', 0)
+	let w = g:custom_foldtext_max_width - &foldcolumn - (&number ? 8 : 0)
+    else
+	let w = winwidth(0) - &foldcolumn - (&number ? 8 : 0)
+    endif
     let foldSize = 1 + v:foldend - v:foldstart
     let foldSizeStr = " " . foldSize . " lines "
     let foldLevelStr = '+'. v:folddashes
