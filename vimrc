@@ -84,6 +84,7 @@ set ww=<,>
 " when using :scrollbind, also bind scrolling horizontally
 set scrollopt+=hor
 " English messages please
+lang C
 lang mess C
 lang ctype C
 " how many entries in the commandline history to save
@@ -124,8 +125,6 @@ set shiftwidth=4
 set shiftround
 " Set backspace (BS) mode: eol,indent,start
 set bs=2
-" Display a `+' for wrapped lines
-set sbr=+
 " Set shell
 set sh=zsh
 
@@ -161,26 +160,21 @@ if ($OS =~"Windows")
     let g:netrw_scp_cmd="\"c:\\Program Files\\PuTTY\\pscp.exe\" -q -batch"
 endif
 
-"---------------------------------------------
-" Vim 7 Features
-"---------------------------------------------
-if version >= 700
-    " Change the disturbing pink color for omnicompletion
-    hi Pmenu guibg=DarkRed
-    set spellfile=~/.vim/spellfile.add
+" Change the disturbing pink color for omnicompletion
+hi Pmenu guibg=DarkRed
+set spellfile=~/.vim/spellfile.add
 
-    " change language -  get spell files from http://ftp.vim.org/pub/vim/runtime/spell/
-    " cd ~/.vim/spell && wget http://ftp.vim.org/pub/vim/runtime/spell/de.latin1.spl
-    " change to german:
-    set spelllang=de,en
-    " set maximum number of suggestions listed to top 10 items
-    set sps=best,10
+" change language -  get spell files from http://ftp.vim.org/pub/vim/runtime/spell/
+" cd ~/.vim/spell && wget http://ftp.vim.org/pub/vim/runtime/spell/de.latin1.spl
+" change to german:
+set spelllang=de,en
+" set maximum number of suggestions listed to top 10 items
+set sps=best,10
 
-    " highlight matching parens:
-    " Default for matchpairs: (:),[:],{:},<:>
-     set matchpairs+=<:>
-     highlight MatchParen term=reverse ctermbg=7 guibg=cornsilk
-endif
+" highlight matching parens:
+" Default for matchpairs: (:),[:],{:},<:>
+    set matchpairs+=<:>
+    highlight MatchParen term=reverse ctermbg=7 guibg=cornsilk
 
 if has("folding")
     set foldenable foldmethod=marker foldlevelstart=0
@@ -194,6 +188,7 @@ if exists("$PUTTY_TERM")
     " pretending to be an xterm compatible terminal (cursor keys, etc),
     " so use that one instead of putty-256color
     set term=xterm-256color t_Co=256 title
+    exe "set t_ti=\e[?1049h t_te=\e[?1049l"
 elseif (&term =~ '^screen')
   "if expand("$COLORTERM") !~ 'rxvt'
     set t_Co=256
@@ -234,12 +229,12 @@ endif
 
 if (&t_Co == 256) || (&t_Co == 88) || has("gui_running")
     "let g:solarized_termcolors=256
-    colors molokai
+    colorscheme molokai
 else
     colorscheme desert
 endif
 
-" restore bg value, might be reset by the colorscheme
+" restore bg value, might have been reset by the colorscheme
 let &bg=_bg
 unlet _bg
 
@@ -273,9 +268,12 @@ if &encoding == "utf-8"
 	exe "set listchars=conceal:·,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
     endif
     exe "set fillchars=vert:\u2502,fold:\u2500,diff:\u2014"
+    exe "set sbr=\u2500"
 else
     " Special characters that will be shown, when set list is on
     set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
+    " Display a `+' for wrapped lines
+    set sbr=+
 endif
 
 " This script contains plugin specific settings
