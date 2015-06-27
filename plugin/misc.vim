@@ -167,6 +167,90 @@ command! -nargs=+ -complete=command Page :call <SID>Page(<q-args>)
 
 " CursorLineNr should change color in gui mode
 call misc#CursorLineNrAdjustment()
+
+" Highlight search term {{{2
+" http://vi.stackexchange.com/q/2761
+
+" Disabled for now, does not work as wanted:
+if 0
+  fun! SearchHighlight()
+	  silent! call matchdelete(b:ring)
+	  let b:ring = matchadd('ErrorMsg', '\c\%#' . @/, 101)
+  endfun
+
+  fun! SearchNext()
+	  try
+		  execute 'normal! ' . 'Nn'[v:searchforward]
+	  catch /E385:/
+		  echohl ErrorMsg | echo "E385: search hit BOTTOM without match for: " . @/ | echohl None
+	  endtry
+	  call SearchHighlight()
+  endfun
+
+  fun! SearchPrev()
+	  try
+		  execute 'normal! ' . 'nN'[v:searchforward]
+	  catch /E384:/
+		  echohl ErrorMsg | echo "E384: search hit TOP without match for: " . @/ | echohl None
+	  endtry
+	  call SearchHighlight()
+  endfun
+
+  " Highlight entry
+  nnoremap <silent> n :call SearchNext()<CR>
+  nnoremap <silent> N :call SearchPrev()<CR>
+endif
+
+" Damian Conway's Die Blinkënmatchen: highlight matches
+nnoremap <silent> n n:call HLNext(0.2)<cr>
+nnoremap <silent> N N:call HLNext(0.2)<cr>
+
+function! HLNext (blinktime)
+  let target_pat = '\c\%#'.@/
+  let ring = matchadd('ErrorMsg', target_pat, 101)
+  redraw
+  exec 'sleep ' . float2nr(a:blinktime * 1000) . 'm'
+  call matchdelete(ring)
+  redraw
+endfunction
+
+" Command Abbreviation {{{2
+" simple version of cmdalias.vim
+function! CommandCabbr(abbreviation, expansion)
+  execute 'cabbr ' . a:abbreviation . ' <c-r>=getcmdpos() == 1 && getcmdtype() == ":" ? "' . a:expansion . '" : "' . a:abbreviation . '"<CR>'
+endfunction
+command! -nargs=+ CommandCabbr call CommandCabbr(<f-args>)
+" Use it on itself to define a simpler abbreviation for itself.
+CommandCabbr ccab CommandCabbr
+
+" Capture messages in new window {{{2
+:com! Messages :redir =>a|sil mess|redir end|new|set buftype=nofile|0put =a
+" Quickfix Do command
+" :QFDo! iterates over location list
+" :QFDo iterates over quickfix list
+" Define Function Quick-Fix-List-Do:
+fun! QFDo(bang, command) 
+     let qflist={} 
+     if a:bang 
+         let tlist=map(getloclist(0), 'get(v:val, ''bufnr'')') 
+     else 
+         let tlist=map(getqflist(), 'get(v:val, ''bufnr'')') 
+     endif 
+     if empty(tlist) 
+        echomsg "Empty Quickfixlist. Aborting" 
+        return 
+     endif 
+     for nr in tlist 
+     let item=fnameescape(bufname(nr)) 
+     if !get(qflist, item,0) 
+         let qflist[item]=1 
+     endif 
+     endfor 
+     :exe 'argl ' .join(keys(qflist)) 
+     :exe 'argdo ' . a:command 
+endfunc 
+
+com! -nargs=1 -bang Qfdo :call QFDo(<bang>0,<q-args>) 
 " Restore: "{{{2
 let &cpo=s:cpo
 unlet s:cpo

@@ -1,12 +1,12 @@
 " ChangesPlugin.vim - Using Signs for indicating changed lines
 " ---------------------------------------------------------------
-" Version:  0.14
+" Version:  0.15
 " Authors:  Christian Brabandt <cb@256bit.org>
-" Last Change: Wed, 14 Aug 2013 22:10:39 +0200
+" Last Change: Thu, 15 Jan 2015 21:16:40 +0100
 " Script:  http://www.vim.org/scripts/script.php?script_id=3052
 " License: VIM License
 " Documentation: see :help changesPlugin.txt
-" GetLatestVimScripts: 3052 14 :AutoInstall: ChangesPlugin.vim
+" GetLatestVimScripts: 3052 15 :AutoInstall: ChangesPlugin.vim
 " ---------------------------------------------------------------------
 "  Load Once: {{{1
 if &cp || exists("g:loaded_changes")
@@ -15,6 +15,7 @@ endif
 let g:loaded_changes       = 1
 let s:keepcpo              = &cpo
 set cpo&vim
+let s:nowait = v:version > 703 || v:version == 703 && has("patch1261")
 
 " ---------------------------------------------------------------------
 " Public Functions: {{{1
@@ -33,16 +34,16 @@ com! CC  ChangesCaption
 com! CL  ChangesLinesOverview
 com! CD  ChangesDiffMode
 com! CT  ChangesStyleToggle
-com! -bang CF ChangesFoldDiff<bang>
+com! -nargs=? -bang CF ChangesFoldDiff <args>
 
 com! -nargs=? -complete=file -bang EnableChanges	call changes#EnableChanges(1, <q-bang>, <q-args>)
-com! DisableChanges		call changes#CleanUp()
+com! DisableChanges		call changes#CleanUp(1)
 com! ToggleChangeView		call changes#TCV()
 com! ChangesCaption		call changes#Output()
 com! ChangesLinesOverview	call changes#EnableChanges(2, '')
 com! ChangesDiffMode		call changes#EnableChanges(3, '')
 com! ChangesStyleToggle		call changes#ToggleHiStyle()
-com! -bang ChangesFoldDifferences   call changes#FoldDifferences(<q-bang>)
+com! -nargs=? ChangesFoldDifferences     call changes#FoldDifferences(<f-args>)
 com! -bang ChangesStageCurrentHunk  call changes#StageHunk(line('.'), !empty(<q-bang>))
 
 if get(g:, 'changes_autocmd', 1) || get(g:, 'changes_fixed_sign_column', 0)
@@ -71,13 +72,13 @@ if !hasmapto("ah", 'o')
 endif
 
 if !hasmapto('<Plug>(ChangesStageHunk)')
-    nmap     <silent><unique><nowait> <Leader>h <Plug>(ChangesStageHunk)
+    exe "nmap     <silent><unique>".(s:nowait ? "<nowait>" : ""). " <Leader>h <Plug>(ChangesStageHunk)"
     nnoremap <unique><script> <Plug>(ChangesStageHunk) <sid>ChangesStageHunkAdd
     nnoremap <sid>ChangesStageHunkAdd :<c-u>call changes#StageHunk(line('.'), 0)<cr>
 endif
 
 if !hasmapto('<Plug>(ChangesStageHunkRevert)')
-    nmap     <silent><unique><nowait> <Leader>H <Plug>(ChangesStageHunkRevert)
+    exe "nmap     <silent><unique>". (s:nowait ? "<nowait>" : ""). " <Leader>H <Plug>(ChangesStageHunkRevert)"
     nnoremap <unique><script> <Plug>(ChangesStageHunkRevert) <sid>ChangesStageHunkRevert
     nnoremap <sid>ChangesStageHunkRevert :<c-u>call changes#StageHunk(line('.'), 1)<cr>
 endif

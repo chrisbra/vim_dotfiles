@@ -54,6 +54,9 @@ set hidden
 " Enable file modelines (default is ok)
 set modeline modelines=1
 
+" don't scan included files
+set complete-=i
+
 " when joining, prevent inserting an extra space before a .?!
 set nojoinspaces
 " vi compatible, set $ to line end, when chaning text
@@ -84,9 +87,9 @@ set ww=<,>
 " when using :scrollbind, also bind scrolling horizontally
 set scrollopt+=hor
 " English messages please
-lang C
-lang mess C
-lang ctype C
+"lang C
+"lang mess C
+"lang ctype C
 " how many entries in the commandline history to save
 set history=1000
 " Commandline Completion
@@ -137,7 +140,7 @@ set nrformats=
 " Breakindent
 if exists('+breakindent')
     set bri
-    set briopt=min:20
+    set briopt=min:20,sbr
 endif
 
 if exists('+langnoremap')
@@ -154,6 +157,10 @@ if has("autocmd")
 	au!
 	au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
     augroup END
+    aug custom_VimResized
+        au!
+        au VimResized * :wincmd =
+      augroup END
 endif
 
 if ($OS =~"Windows")
@@ -173,12 +180,15 @@ set sps=best,10
 
 " highlight matching parens:
 " Default for matchpairs: (:),[:],{:},<:>
-    set matchpairs+=<:>
-    highlight MatchParen term=reverse ctermbg=7 guibg=cornsilk
+set matchpairs+=<:>
+highlight MatchParen term=reverse ctermbg=7 guibg=cornsilk
 
 if has("folding")
     set foldenable foldmethod=marker foldlevelstart=0
 endif
+
+" Store more items in the viminfo
+set viminfo='100,<50,s10,h,!,:1000
 
 let &titleold = fnamemodify(&shell, ":t")
 let _bg = &bg " save current bg, might get reset below
@@ -230,6 +240,7 @@ endif
 if (&t_Co == 256) || (&t_Co == 88) || has("gui_running")
     "let g:solarized_termcolors=256
     colorscheme molokai
+    "colorscheme gruvbox
 else
     colorscheme desert
 endif
@@ -261,19 +272,33 @@ digraphs -- 8212
 digraphs \|- 166
 
 if &encoding == "utf-8"
-    if !exists("$PUTTY_TERM")
-	exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
+    if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
+        exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
+	exe "set sbr=\u21b3"
     else
-	" Putty can't display all nice utf-8 chars
-	exe "set listchars=conceal:·,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
+        " Putty can't display all nice utf-8 chars
+        "exe "set listchars=conceal:·,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,space:\ub7"
+        exe "set listchars=conceal:\u00b7,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,nbsp:\u03c7"
+	exe "set sbr=\u2500"
     endif
     exe "set fillchars=vert:\u2502,fold:\u2500,diff:\u2014"
-    exe "set sbr=\u2500"
 else
     " Special characters that will be shown, when set list is on
     set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
     " Display a `+' for wrapped lines
     set sbr=+
+endif
+
+" Shift-tab on GNU screen
+" http://superuser.com/questions/195794/gnu-screen-shift-tab-issue
+set t_kB=[Z
+
+if v:version > 704 || v:version == 704 && has("patch711")
+    if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
+	exe "set listchars+=space:\u2423"
+    else
+	exe "set listchars+=space:\ub7"
+    endif
 endif
 
 " This script contains plugin specific settings
@@ -307,3 +332,10 @@ endif
 " open file at last position
 " :h last-position-jump
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"zvzz" | endif
+
+" Special Search patterns:
+let g:SEARCH_VISUAL_END='\%(\%(\%V.*\%V.\)\@>\zs\(.\|$\)\)'
+
+if has("nvim")
+    source nvimrc
+endif

@@ -11,8 +11,6 @@ shift
 shift
 shift
 
-if '%sudo%' == 'uac' goto CHECKPRIVILEGES
-
 :: Use runas or something alike to elevate priviliges, but
 :: first parse parameter for runas
 :: Windows cmd.exe is very clumsy to use ;(
@@ -35,24 +33,4 @@ if '%mode%' == 'write' (
 ) else (
     %sudo% %params% " %COMSPEC% /c copy /Y %myfile% %newcontent% "
 )
-exit /B
-
-:: Use UAC to elevate rights, idea taken from:
-:: http://stackoverflow.com/questions/7044985/how-can-i-auto-elevate-my-batch-file-so-that-it-requests-from-uac-admin-rights
-:CHECKPRIVILEGES
-set vbs="%temp%\GetPrivileges.vbs"
-
-echo.
-echo **************************************
-echo Invoking UAC for Privilege Escalation 
-echo **************************************
-
-echo Set UAC = CreateObject^("Shell.Application"^) > %vbs%
-if '%mode%' == 'write' (
-    echo UAC.ShellExecute "%COMSPEC%", "/c copy /Y "%newcontent%" "%myfile%"", "", "runas", 1 >> %vbs%
-) else (
-    echo UAC.ShellExecute "%COMSPEC%", "/c copy /Y "%myfile%" "%newcontent%"", "", "runas", 1 >> %vbs%
-)
-:: Run VBS script and delete it afterwards
-%vbs%
-if exist %vbs% (del %vbs%)
+exit /B %ERRORLEVEL%

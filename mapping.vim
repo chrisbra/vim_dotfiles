@@ -12,6 +12,10 @@ vnoremap ,h :<c-u>1,'<lt>-fold<bar>'>+,$fold<CR>
 
 nnoremap <F7> :call ToggleFoldByCurrentSearchPattern()<CR>
 
+" n always searches downwards, N always upwards
+noremap <expr> n 'Nn'[v:searchforward]
+noremap <expr> N 'nN'[v:searchforward]
+
 " don't mess up vim, when inserting with the mouse
 set pastetoggle=<F10> 
 
@@ -24,7 +28,7 @@ augroup END
 " execute the command in the current line (minus the first word, which
 " is intended to be a shell prompt and needs to be $) and insert the 
 " output in the buffer
-nmap ,e ^wy$:r!<cword><CR>
+"nmap ,e ^wy$:r!<cword><CR>
 
 " map the DiffOrig command to  <leader>do
 " HINT: *d*iff with *o*riginal file
@@ -66,27 +70,27 @@ endif
 "---------------------------------------------------------
 "
 " Using par to reformat a file
-map ,V :%!par w50<CR>
+" map ,V :%!par w50<CR>
 
 " make n/N for search work more intuitevely
 " http://groups.google.com/group/vim_use/msg/6ff8586688e52b7d
 " ono m //e<CR>
-xn <script> m //e<SID>SelOff<CR>
-cno <expr> <SID>SelOff &sel=="exclusive" ? "+1" : ""
-" do the right thing after o_//e and .
-no <script> n //<CR><SID>HistDel
-no <script> N ??<CR><SID>HistDel
-sunm n|sunm N
-nn <silent> <SID>HistDel :call<sid>HistDel(0)<CR>
-vn <silent> <SID>HistDel :<C-U>call<sid>HistDel(1)<CR>
-ino <silent> <SID>HistDel <C-R>=<sid>HistDel(0)<CR>
-func! <sid>HistDel(vmode)
-    if a:vmode
-        normal! gv
-    endif
-    call histdel('/', -1)
-    return ""
-endfunc
+" xn <script> m //e<SID>SelOff<CR>
+" cno <expr> <SID>SelOff &sel=="exclusive" ? "+1" : ""
+" " do the right thing after o_//e and .
+" no <script> n //<CR><SID>HistDel
+" no <script> N ??<CR><SID>HistDel
+" sunm n|sunm N
+" nn <silent> <SID>HistDel :call<sid>HistDel(0)<CR>
+" vn <silent> <SID>HistDel :<C-U>call<sid>HistDel(1)<CR>
+" ino <silent> <SID>HistDel <C-R>=<sid>HistDel(0)<CR>
+" func! <sid>HistDel(vmode)
+"     if a:vmode
+"         normal! gv
+"     endif
+"     call histdel('/', -1)
+"     return ""
+" endfunc
 
 " Vim Tips wiki Tip 171 https://vim.wikia.com/wiki/VimTip171
 fu! s:VSetSearch(cmdtype)

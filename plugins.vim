@@ -51,8 +51,10 @@ let g:CSApprox_verbose_level=0
 "let g:csv_comment = '#'
 "let g:csv_hiHeader="DiffAdd"
 "let g:csv_disable_fdt=1
-let g:csv_autocmd_arrange = 1
-let g:csv_autocmd_arrange_size = 1024*500   " only enable automatic arranging of columns for files less than 1 MB
+"let g:csv_autocmd_arrange = 1
+let g:csv_no_column_highlight=1
+let g:csv_highlight_column='y'
+"let g:csv_autocmd_arrange_size = 1024*500   " only enable automatic arranging of columns for files less than 1 MB
 "aug CSV_Editing
 "    au!
 "    au BufRead,BufWritePost *.csv :%ArrangeColumn
@@ -104,7 +106,7 @@ let g:colorizer_auto_map = 1
 "let g:colorizer_syntax=1
 
 " NrwwRgn:
-let b:nrrw_aucmd_close= "unlet! g:nrrw_custom_options"
+"let b:nrrw_aucmd_close= "unlet! g:nrrw_custom_options"
 
 " DynamicSigns:
 "let g:Signs_Scrollbar = 1
@@ -116,8 +118,9 @@ let g:Signs_QFList = 0
 "let g:Signs_Alternate = 1
 
 " ft_improved
-let g:ft_improved_multichars = 1
+"let g:ft_improved_multichars = 1
 let g:ft_improved_ignorecase = 1
+"let g:ft_improved_consistent_comma = 1
 "let g:ft_improved_nomap_comma = 1
 "let g:ft_improved_nohighlight = 0
 
@@ -129,8 +132,8 @@ let g:distractfree_colorscheme = "darkroom"
 let g:replay_record = 1
 
 " ShowWhiteSpace
-let g:showwhite_highlighting = 'ctermfg=7 ctermbg=NONE guifg=LightGrey guibg=NONE'
-nmap <F5> <Plug>ShowWhiteToggle
+"let g:showwhite_highlighting = 'ctermfg=7 ctermbg=NONE guifg=LightGrey guibg=NONE'
+"nmap <silent> <F5> <Plug>ShowWhiteToggle
 
 " Powerline:
 " disabled
@@ -264,6 +267,8 @@ let g:syntastic_mode_map = { 'mode': 'passive',
 if !has('lua')
     let g:loaded_neocomplete = 0
 endif
+
+"let g:loaded_commentary_cb=1
 
 " Unite: {{{
 "call unite#filters#matcher_default#use(['matcher_fuzzy'])

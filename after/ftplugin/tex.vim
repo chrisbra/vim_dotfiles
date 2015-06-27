@@ -17,14 +17,14 @@ set sw=2
 " all the figure labels. Very useful!
 set iskeyword+=: 
 " Loading latex-suite when input file is detected to be tex file
-filetype plugin indent on
+"filetype plugin indent on
 
 " This mapping allows to choos in visible mode which region to comment out.
 " Just select a region and press ,co
 "vmap ,co :s/^\([.]*\)/% \1/<CR>
 " and vice versa (remove the comment signs:
 "vmap ,uco :s/^% \([.]*\)/\1/<CR>
-setlocal tw=75 foldenable
+setlocal tw=80 foldenable
 
-inoremap <buffer> " ,,``<LEFT>
-inoremap <buffer> ' ,`<LEFT>
+"inoremap <buffer> " ,,``<LEFT>
+"inoremap <buffer> ' ,`<LEFT>

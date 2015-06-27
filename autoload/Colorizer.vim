@@ -1,10 +1,10 @@
 " Plugin:       Highlight Colornames and Values
 " Maintainer:   Christian Brabandt <cb@256bit.org>
 " URL:          http://www.github.com/chrisbra/color_highlight
-" Last Change: Thu, 27 Mar 2014 23:12:43 +0100
+" Last Change: Thu, 15 Jan 2015 21:49:17 +0100
 " Licence:      Vim License (see :h License)
-" Version:      0.10
-" GetLatestVimScripts: 3963 10 :AutoInstall: Colorizer.vim
+" Version:      0.11
+" GetLatestVimScripts: 3963 11 :AutoInstall: Colorizer.vim
 "
 " This plugin was inspired by the css_color.vim plugin from Nikolaus Hofer.
 " Changes made: - make terminal colors work more reliably and with all
@@ -980,11 +980,11 @@ function! s:PreviewColorName(color) "{{{2
 endfu
 
 function! s:PreviewColorHex(match) "{{{2
+    let s:position = getpos('.')
     if <sid>IsInComment()
         " skip coloring comments
         return
     endif
-    let s:position = getpos('.')
     let color = (a:match[0] == '#' ? a:match[1:] : a:match)
     let pattern = color
     if len(color) == 3
@@ -1029,10 +1029,17 @@ function! s:PreviewColorTerm(pre, text, post) "{{{2
     endif
     let clr_Dict.fg = color[0]
     let clr_Dict.bg = color[1]
-    let pattern = '\%('. a:pre. '\)\@<='.escape(a:text, '\^$.*~[]'). '\('.a:post.'\)\@='
+    let pre  = escape(a:pre,  '[]')
+    let post = escape(a:post, '[]')
+    let txt  = escape(a:text, '\^$.*~[]')
+    " limit the pattern to the belonging line (should make syntax matching
+    " faster!)
+    let pattern = '\%(\%'.line('.').'l\)\%('. pre. '\)\@<='.txt. '\('.post.'\)\@='
+    if exists('*matchaddpos')
+        let clr_Dict.pos = [[ line('.'), col('.'), strlen(a:pre. a:text. a:post)]]
+    endif
     call s:SetMatcher(pattern, clr_Dict)
 endfunction
-
 function! s:PreviewTaskWarriorColors(submatch) "{{{2
     " a:submatch is something like 'black on rgb141'
 
@@ -1287,7 +1294,7 @@ function! s:ColorInit(...) "{{{1
         let s:round = 0
     endif
 
-    let s:keeppatterns = v:version > 704 || v:version == 704 && has("patch38")
+    let s:keeppatterns = v:version > 704 || v:version == 704 && has("patch83")
 
     " Enable Autocommands
     if exists("g:colorizer_auto_color")
@@ -1378,7 +1385,7 @@ function! s:ColorInit(...) "{{{1
     elseif s:force_hl
         call Colorizer#ColorOff()
     endif
-    if !exists("s:conceal") && has("conceal")
+    if has("conceal") && !exists("s:conceal")
         let s:conceal = [&l:cole, &l:cocu]
     endif
 
@@ -1406,7 +1413,7 @@ function! s:ColorInit(...) "{{{1
             call extend(s:colors, g:colorizer_custom_colors, 'force')
         endif
         let s:colornamepattern =  s:GetColorPattern(keys(s:colors))
-        call map(w:match_list, 'v:val.pattern')
+        "call map(w:match_list, 'v:val.pattern')
     else
         throw "nocolor"
     endif
@@ -1443,8 +1450,9 @@ function! s:ColorInit(...) "{{{1
     let s:color_patterns_special = {
         \ 'term': ['\%(\%x1b\[0m\)\?\(\%(\%x1b\[\d\+\%([:;]\d\+\)*m\)\+\)\([^\e]*\)\(\%x1b\%(\[0m\|\[K\)\)\=',
             \ function("s:PreviewColorTerm"), 'colorizer_term', [] ],
-        \ 'term_conceal': ['\%(\(\%(\%x1b\[0m\)\?\%x1b\[\d\+\%([;:]\d\+\)*m\)\|\%x1b\[K$\)', '',
-            \ 'colorizer_term_conceal', []  ] }
+        \ 'term_conceal': [ ['\%(\(\%(\%x1b\[0m\)\?\%x1b\[\d\+\%([;:]\d\+\)*\a\)\|\%x1b\[K$\)',
+        \ '\%d13', '\%(\%x1b\[K\)', '\%(\%x1b\]\d\+;\d\+;\)', '\%(\%x1b\\\)'
+        \ ], '', 'colorizer_term_conceal', []  ] }
 
     if exists("s:colornamepattern") && s:color_names
         let s:color_patterns["colornames"] = [ s:colornamepattern,
@@ -1622,6 +1630,12 @@ endfunction
 
 function! s:SetMatch(group, pattern, param_dict) "{{{1
     call s:DoHlGroup(a:group, a:param_dict)
+    if has_key(a:param_dict, 'pos')
+        call matchaddpos(a:group, a:param_dict.pos, s:default_match_priority)
+        " do not add the pattern to the matchlist
+        "call add(w:match_list, a:pattern)
+        return
+    endif
     if s:DidColor(a:group, a:pattern)
         return
     endif
@@ -1801,19 +1815,19 @@ function! s:Ansi2Color(chars) "{{{1
     let bground = ""
     let check = [0,0] " check fground and bground color
 
-    if a:chars=~ '.*3[0-7]\(;1\)\?[m;]'
+    if a:chars =~ '48;5;\d\+'
+        let check[0] = 0
+    elseif a:chars=~ '.*3[0-7]\(;1\)\?[m;]'
         let check[0] = 1
     elseif a:chars =~ '.*38\([:;]\)2\1'
         let check[0] = 2 " Uses True Color Support
-    else
-        let fground = "NONE"
     endif
-    if a:chars=~ '.*4[0-7]\(;1\)\?[m;]'
-        let check[1] = 1
+    if a:chars =~ '48;5;\d\+'
+        let check[1] = 3
     elseif a:chars =~ '.*48\([:;]\)2\1'
         let check[1] = 2
-    else
-        let bground = "NONE"
+    elseif a:chars=~ '.*4[0-7]\(;1\)\?[m;]'
+        let check[1] = 1
     endif
 
     if check[0] == 2
@@ -1829,6 +1843,9 @@ function! s:Ansi2Color(chars) "{{{1
         elseif a:pat[1] == 48 " foreground color
             let bground = printf("%.2X%.2X%.2X", pat[2], pat[3], pat[4])
         endif
+    elseif check[1] == 3
+        let nr = matchstr(a:chars, '\%x1b\[48;5;\zs\d\+\zem')
+        let bground = s:Term2RGB(nr)
     else
         for val in ["std", "bold"]
             for key in keys(s:term2ansi[val])
@@ -1853,14 +1870,21 @@ function! s:Ansi2Color(chars) "{{{1
             endif
         endfor
     endif
-    return [fground, bground]
+    return [(empty(fground) ? 'NONE' : fground), (empty(bground) ? "NONE" : bground)]
 endfunction
 
 function! s:TermConceal(pattern) "{{{1
+    " Conceals a list of patterns
+    if exists("b:Colorizer_did_syntax")
+        return
+    endif
     let s:position = getpos('.')
     if has("conceal")
-        exe "syn match ColorTermESC /". a:pattern. "/ conceal containedin=ALL"
+        for pat in a:pattern
+            exe "syn match ColorTermESC /". pat. "/ conceal containedin=ALL"
+        endfor
         setl cocu=nv cole=2
+        let b:Colorizer_did_syntax=1
     endif
 endfu
 function! s:GetColorPattern(list) "{{{1
@@ -2107,13 +2131,27 @@ function! s:SyntaxMatcher(enable) "{{{1
         return
     endif
     let did_clean = {}
-    for hi in s:GetMatchList()
+    "
+    let list=s:GetMatchList()
+    if len(list) > 1000
+        " This will probably slow
+        call s:Warn("Colorizer many colors detected, syntax highlighting will probably slow down Vim considerably!")
+    endif
+    for hi in list
         if !get(did_clean, hi.group, 0)
             let did_clean[hi.group] = 1
             exe "sil! syn clear" hi.group
         endif
         if a:enable
-            exe "syn match" hi.group "excludenl /". hi.pattern. "/ display containedin=ALL"
+            if has_key(hi, 'pattern')
+                exe "syn match" hi.group "excludenl /". escape(hi.pattern, '/'). "/ display containedin=ALL"
+            else
+                " matchaddpos()
+                let line=hi.pos1[0]
+                let pos =hi.pos1[1]-1
+                let len =hi.pos1[1]+hi.pos1[2]-2
+                exe printf('syn match %s excludenl /\%%%dl\%%>%dc\&.*\%%<%dc/ display containedin=ALL', hi.group, line, pos, len)
+            endif
             " We have syntax highlighting, can clear the matching
             " ignore errors (just in case)
             sil! call matchdelete(hi.id)
@@ -2134,8 +2172,12 @@ function! Colorizer#ColorOff() "{{{1
         sil! call matchdelete(_match.id)
     endfor
     call Colorizer#LocalFTAutoCmds(0)
-    if exists("s:conceal") && has("conceal")
+    if has("conceal") && exists("s:conceal")
         let [&l:cole, &l:cocu] = s:conceal
+        if !empty(hlID('ColorTermESC'))
+            syn clear ColorTermESC
+        endif
+        unlet! b:Colorizer_did_syntax
     endif
     unlet! w:match_list s:conceal
 endfu
@@ -2162,6 +2204,7 @@ function! Colorizer#DoColor(force, line1, line2, ...) "{{{1
     let _a   = winsaveview()
     let save = s:SaveRestoreOptions(1, {},
             \ ['mod', 'ro', 'ma', 'lz', 'ed', 'gd', '@/'])
+    let s:relstart = s:Reltime()
 
     " highlight Hex Codes:
     "
@@ -2184,7 +2227,6 @@ function! Colorizer#DoColor(force, line1, line2, ...) "{{{1
     "     hsl(120, 100%, 75%) lightgreen
     "     hsl(120, 75%, 75%) pastelgreen
     " highlight rgb(X,X,X) values
-        let s:relstart = s:Reltime()
         for Pat in values(s:color_patterns)
             let start = s:Reltime()
             if !get(g:, Pat[2], 1) || (get(g:, Pat[2]. '_disable', 0) > 0)
@@ -2282,8 +2324,10 @@ function! Colorizer#DoColor(force, line1, line2, ...) "{{{1
         " Some error occured, stop trying to color the file
         call Colorizer#ColorOff()
         call s:Warn("Some error occured here: ". error)
-        call s:Warn("Position: ". string(s:position))
-        call matchadd('Color_Error', '\%'.s:position[1].'l\%'.s:position[2].'c.*\>')
+        if exists("s:position")
+            call s:Warn("Position: ". string(s:position))
+            call matchadd('Color_Error', '\%'.s:position[1].'l\%'.s:position[2].'c.*\>')
+        endif
     endif
     call s:PrintColorStatistics()
     call s:SaveRestoreOptions(0, save, [])
@@ -2344,18 +2388,17 @@ function! Colorizer#AutoCmds(enable) "{{{1
     if a:enable && !get(g:, 'colorizer_debug', 0)
         aug Colorizer
             au!
-            au CursorHold,CursorHoldI,InsertLeave * silent call
-                        \ Colorizer#DoColor('', line('w0'), line('w$'))
-            "au GUIEnter,BufWinEnter * silent call
-            "            \ Colorizer#DoColor('', 1, line('$'))
+            au InsertLeave * silent call
+                        \ Colorizer#ColorLine('!', line('w0'), line('w$'))
             au GUIEnter * silent call Colorizer#DoColor('!', 1, line('$'))
             au WinEnter,BufWinEnter * silent call Colorizer#ColorWinEnter()
             au ColorScheme * silent call Colorizer#DoColor('!', 1, line('$'))
             if exists("##TextChanged") && (v:version > 704 || v:version == 704 && has('patch143'))
-                au TextChangedI * call Colorizer#ColorLine()
+                au TextChangedI * call Colorizer#ColorLine('', line('.'),line('.'))
             else
                 if get(g:, 'colorizer_cursormoved', 0)
-                    au CursorMoved,CursorMovedI * call Colorizer#ColorLine()
+                    au CursorMoved,CursorMovedI * call Colorizer#ColorLine('', line('.'),line('.'))
+                    au CusorHold, CursorHoldI * silent call Colorizer#ColorLine('!', line('w0'), line('w$'))
                 endif
             endif
         aug END
@@ -2368,17 +2411,20 @@ function! Colorizer#AutoCmds(enable) "{{{1
 endfu
 
 function! Colorizer#LocalFTAutoCmds(enable) "{{{1
-    " do not enable auto commands in debug mode
     if a:enable
         aug FTColorizer
             au!
-            au CursorHold,CursorHoldI,InsertLeave <buffer> silent call
-                        \ Colorizer#DoColor('', line('w0'), line('w$'))
-            au CursorMoved,CursorMovedI <buffer> call Colorizer#ColorLine()
+            au InsertLeave <buffer> silent call
+                        \ Colorizer#ColorLine('', line('w0'), line('w$'))
+            au CursorMoved,CursorMovedI <buffer> call Colorizer#ColorLine('',line('.'), line('.'))
             au WinEnter,BufWinEnter <buffer> silent call Colorizer#ColorWinEnter()
             au BufLeave <buffer> call Colorizer#ColorOff()
             au GUIEnter,ColorScheme <buffer> silent
                         \ call Colorizer#DoColor('!', 1, line('$'))
+            if get(g:, 'colorizer_cursormoved', 0)
+                au CursorMoved,CursorMovedI * call Colorizer#ColorLine('', line('.'),line('.'))
+                au CusorHold, CursorHoldI * silent call Colorizer#ColorLine('!', line('w0'), line('w$'))
+            endif
         aug END
         if !exists("b:undo_ftplugin")
             " simply unlet a dummy variable
@@ -2424,12 +2470,12 @@ function! Colorizer#ColorWinEnter(...) "{{{1
     call setpos('.', _c)
 endfu
 
-function! Colorizer#ColorLine() "{{{1
-    if get(b:, 'Colorizer_changedtick', 0) == b:changedtick
+function! Colorizer#ColorLine(force, start, end) "{{{1
+    if get(b:, 'Colorizer_changedtick', 0) == b:changedtick && empty(a:force)
         " nothing to do
         return
     else
-        call Colorizer#DoColor('', line('.'),line('.'))
+        call Colorizer#DoColor(a:force, a:start, a:end)
         let b:Colorizer_changedtick = b:changedtick
     endif
 endfu

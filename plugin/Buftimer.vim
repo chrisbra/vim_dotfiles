@@ -70,32 +70,6 @@ augroup BufTimer
   autocmd FocusLost *   let b:timeAccum = s:BufTimerCalc()
 augroup END
 
-" Functions: "{{{2
-
-function! s:Round(val) "{{{3
-  if has("float")
-    " Bug? round(0.0) == -0.0
-    return a:val == 0.0 ? 0.0 : round(a:val)
-  else
-    return a:val
-  endif
-endfu
-
-function! s:Reltime(buffer) "{{{3
-  if a:buffer == bufnr('')
-    return reltimestr(reltime(getbufvar(a:buffer, "timeStart")))
-  else
-    return string(s:zero)
-  endif
-endfunction!
-
-function! s:BufTimerCalc(...) "{{{3
-  let bufnr = exists("a:1") ? a:1 : bufnr('')
-  let timeAccum = s:patch831 ? getbufvar(bufnr, 'timeAccum', s:zero) :
-	\ (getbufvar(bufnr, 'timeAccum') + s:zero)
-  return s:Str2Nr(s:Reltime(bufnr)) + timeAccum
-endfunction!
-
 if has("float")
   function! s:Secs2Str(secs) "{{{3
     let hours   = floor(a:secs/3600)
@@ -112,17 +86,43 @@ else
   endfunction!
 endif
 
+
+" Functions: "{{{2
+function! s:Round(val) "{{{3
+  if has("float")
+    " Bug? round(0.0) == -0.0
+    return a:val == 0.0 ? 0.0 : round(a:val)
+  else
+    return a:val
+  endif
+endfunction
+function! s:Reltime(buffer) "{{{3
+  if a:buffer == bufnr('')
+    return reltimestr(reltime(getbufvar(a:buffer, "timeStart")))
+  else
+    return string(s:zero)
+  endif
+endfunction
+function! s:BufTimerCalc(...) "{{{3
+  let bufnr = exists("a:1") ? a:1 : bufnr('')
+  let timeAccum = s:patch831 ? getbufvar(bufnr, 'timeAccum', s:zero) :
+	\ (getbufvar(bufnr, 'timeAccum') + s:zero)
+  return s:Str2Nr(s:Reltime(bufnr)) + timeAccum
+endfunction
 function! s:BufTimer(...) "{{{3
   let secs = call("s:Round",
 	\ [s:BufTimerCalc(exists("a:1") ? a:1 : bufnr(''))])
   if exists('s:total') | let s:total += secs | endif
   return s:Secs2Str(secs)
-endfunction!
-
-function! s:BufTimerReport() "{{{3
+endfunction
+function! s:BufTimerReport(...) "{{{3
   if !exists('g:btrOpt') || g:btrOpt < 0 || g:btrOpt > 2
     echomsg 'Bad g:btrOpt'
     return
+  endif
+  let filename=''
+  if a:0
+    let filename=fnameescape(a:1)
   endif
   let s:total = s:zero
   let report = [s:BTRtitles[g:btrOpt],
@@ -137,18 +137,42 @@ function! s:BufTimerReport() "{{{3
       call add(report, str)
     endif
   endfor
+  call add(report, "---  --------")
+  call add(report, printf("Tot %9s",s:Secs2Str(s:total)))
 
-  for i in report
-    echo i
-  endfor
+  if empty(filename)
+    for i in report
+      echo i
+    endfor
+  else
+    let s:report=report
+    let s:fname = filename
+    aug BufTimer_WriteReport
+      au!
+      au VimLeave * call s:WriteReport(s:fname, s:report)
+    augroup end
+  endif
 
-  echo "---  --------"
-  echo printf("Tot %9s",s:Secs2Str(s:total))
   unlet s:total
-endfunction!
+endfunction
+
+function! s:WriteReport(filename, report) "{{{3
+  if v:dying
+    return
+  endif
+
+  try
+    call writefile(a:report, a:filename)
+  catch
+    echohl Error
+    echo "Error Writing file: '".a:filename.'": '.v:exception
+    echohl Normal
+    sleep
+  endtry
+endfunction
 
 " Interface: "{{{2
-command! BufTimerReport call s:BufTimerReport()
+command! -nargs=? -complete=file BufTimerReport call s:BufTimerReport(<f-args>)
 command! BufTimer echo s:BufTimer()
 
 nmap <silent> <Plug>BTRmap :BufTimerReport<CR>

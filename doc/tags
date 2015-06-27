@@ -50,9 +50,12 @@
 :ColorHighlight	Colorizer.txt	/*:ColorHighlight*
 :ColorSwapFgBg	Colorizer.txt	/*:ColorSwapFgBg*
 :ColorToggle	Colorizer.txt	/*:ColorToggle*
+:Commentary	commentary.txt	/*:Commentary*
+:CustomDiff	EnhancedDiff.txt	/*:CustomDiff*
 :DC	ChangesPlugin.txt	/*:DC*
 :Digraphs	unicode.txt	/*:Digraphs*
 :DisableChanges	ChangesPlugin.txt	/*:DisableChanges*
+:DisableEnhancedDiff	EnhancedDiff.txt	/*:DisableEnhancedDiff*
 :DownloadUnicode	unicode.txt	/*:DownloadUnicode*
 :EC	ChangesPlugin.txt	/*:EC*
 :EnableChanges	ChangesPlugin.txt	/*:EnableChanges*
@@ -77,6 +80,7 @@
 :NW	NarrowRegion.txt	/*:NW*
 :NarrowRegion	NarrowRegion.txt	/*:NarrowRegion*
 :NarrowWindow	NarrowRegion.txt	/*:NarrowWindow*
+:PatienceDiff	EnhancedDiff.txt	/*:PatienceDiff*
 :RGB2Term	Colorizer.txt	/*:RGB2Term*
 :Replay	Replay.txt	/*:Replay*
 :SaveSigns	savesigns.txt	/*:SaveSigns*
@@ -157,8 +161,11 @@ CCTreeWindowWidth	cctree.txt	/*CCTreeWindowWidth*
 CSApprox.txt	CSApprox.txt	/*CSApprox.txt*
 CSV-Functions	ft-csv.txt	/*CSV-Functions*
 CSVCol()	ft-csv.txt	/*CSVCol()*
+CSVCount()	ft-csv.txt	/*CSVCount()*
 CSVField()	ft-csv.txt	/*CSVField()*
 CSVFixed	ft-csv.txt	/*CSVFixed*
+CSVMax()	ft-csv.txt	/*CSVMax()*
+CSVMin()	ft-csv.txt	/*CSVMin()*
 CSVPat()	ft-csv.txt	/*CSVPat()*
 CSVSum()	ft-csv.txt	/*CSVSum()*
 CSV_WCol()	ft-csv.txt	/*CSV_WCol()*
@@ -205,6 +212,7 @@ Colorizer-vim-hi	Colorizer.txt	/*Colorizer-vim-hi*
 Colorizer.txt	Colorizer.txt	/*Colorizer.txt*
 ConvertData_CSV	ft-csv.txt	/*ConvertData_CSV*
 Copy_CSV	ft-csv.txt	/*Copy_CSV*
+CountCol_CSV	ft-csv.txt	/*CountCol_CSV*
 DeleteColumn_CSV	ft-csv.txt	/*DeleteColumn_CSV*
 DisableCheckAttach	CheckAttach.txt	/*DisableCheckAttach*
 DistractFree	DistractFree.txt	/*DistractFree*
@@ -221,6 +229,15 @@ DistractFree.txt	DistractFree.txt	/*DistractFree.txt*
 Duplicate_CSV	ft-csv.txt	/*Duplicate_CSV*
 DynamicSigns.txt	DynamicSigns.txt	/*DynamicSigns.txt*
 EnableCheckAttach	CheckAttach.txt	/*EnableCheckAttach*
+EnhancedDiff-algorithms	EnhancedDiff.txt	/*EnhancedDiff-algorithms*
+EnhancedDiff-config	EnhancedDiff.txt	/*EnhancedDiff-config*
+EnhancedDiff-convert-diffs	EnhancedDiff.txt	/*EnhancedDiff-convert-diffs*
+EnhancedDiff-custom-cmd	EnhancedDiff.txt	/*EnhancedDiff-custom-cmd*
+EnhancedDiff-feedback	EnhancedDiff.txt	/*EnhancedDiff-feedback*
+EnhancedDiff-history	EnhancedDiff.txt	/*EnhancedDiff-history*
+EnhancedDiff-manual	EnhancedDiff.txt	/*EnhancedDiff-manual*
+EnhancedDiff.vim	EnhancedDiff.txt	/*EnhancedDiff.vim*
+EnhancedDiffPlugin	EnhancedDiff.txt	/*EnhancedDiffPlugin*
 Filter_CSV	ft-csv.txt	/*Filter_CSV*
 FinishRecovery	recoverPlugin.txt	/*FinishRecovery*
 HeaderToggle_CSV	ft-csv.txt	/*HeaderToggle_CSV*
@@ -239,6 +256,8 @@ LargeFile-copyright	LargeFile.txt	/*LargeFile-copyright*
 LargeFile.txt	LargeFile.txt	/*LargeFile.txt*
 Mappings-BufTimer	BufTimer.txt	/*Mappings-BufTimer*
 MatchError	matchit.txt	/*MatchError*
+MaxCol_CSV	ft-csv.txt	/*MaxCol_CSV*
+MinCol_CSV	ft-csv.txt	/*MinCol_CSV*
 MoveCol_CSV	ft-csv.txt	/*MoveCol_CSV*
 NR-HowTo	NarrowRegion.txt	/*NR-HowTo*
 NR-hooks	NarrowRegion.txt	/*NR-hooks*
@@ -341,6 +360,7 @@ camelcasemotion-todo	camelcasemotion.txt	/*camelcasemotion-todo*
 camelcasemotion-usage	camelcasemotion.txt	/*camelcasemotion-usage*
 camelcasemotion.txt	camelcasemotion.txt	/*camelcasemotion.txt*
 camelcasemotion.vim	camelcasemotion.txt	/*camelcasemotion.vim*
+commentary.txt	commentary.txt	/*commentary.txt*
 config/rails.vim	rails.txt	/*config\/rails.vim*
 csapprox	CSApprox.txt	/*csapprox*
 csapprox-+gui	CSApprox.txt	/*csapprox-+gui*
@@ -411,6 +431,7 @@ csv-strict	ft-csv.txt	/*csv-strict*
 csv-syntax	ft-csv.txt	/*csv-syntax*
 csv-syntax-error	ft-csv.txt	/*csv-syntax-error*
 csv-tabularize	ft-csv.txt	/*csv-tabularize*
+csv-textobjects	ft-csv.txt	/*csv-textobjects*
 csv-tips	ft-csv.txt	/*csv-tips*
 csv-toc	ft-csv.txt	/*csv-toc*
 csv-transpose	ft-csv.txt	/*csv-transpose*
@@ -918,6 +939,10 @@ g:sudoAuthArg	SudoEdit.txt	/*g:sudoAuthArg*
 g:sudo_askpass	SudoEdit.txt	/*g:sudo_askpass*
 g:sudo_no_gui	SudoEdit.txt	/*g:sudo_no_gui*
 g:sudo_tee	SudoEdit.txt	/*g:sudo_tee*
+gc	commentary.txt	/*gc*
+gcc	commentary.txt	/*gcc*
+gcgc	commentary.txt	/*gcgc*
+gcu	commentary.txt	/*gcu*
 histwin	histwin.txt	/*histwin*
 histwin-browse	histwin.txt	/*histwin-browse*
 histwin-color	histwin.txt	/*histwin-color*
@@ -942,6 +967,7 @@ improvedft-Enable	ft_improved.txt	/*improvedft-Enable*
 improvedft-Mapping	ft_improved.txt	/*improvedft-Mapping*
 improvedft-Tips	ft_improved.txt	/*improvedft-Tips*
 improvedft-YankRing	ft_improved.txt	/*improvedft-YankRing*
+improvedft-consistent_comma	ft_improved.txt	/*improvedft-consistent_comma*
 improvedft-feedback	ft_improved.txt	/*improvedft-feedback*
 improvedft-ft	ft_improved.txt	/*improvedft-ft*
 improvedft-history	ft_improved.txt	/*improvedft-history*
@@ -989,6 +1015,7 @@ nrrwrgn#NrrwRgnStatus()	NarrowRegion.txt	/*nrrwrgn#NrrwRgnStatus()*
 o_[%	matchit.txt	/*o_[%*
 o_]%	matchit.txt	/*o_]%*
 o_g%	matchit.txt	/*o_g%*
+o_gc	commentary.txt	/*o_gc*
 rails	rails.txt	/*rails*
 rails-'cfu'	rails.txt	/*rails-'cfu'*
 rails-'completefunc'	rails.txt	/*rails-'completefunc'*
@@ -1167,6 +1194,7 @@ v_]%	matchit.txt	/*v_]%*
 v_a%	matchit.txt	/*v_a%*
 v_ah	ChangesPlugin.txt	/*v_ah*
 v_g%	matchit.txt	/*v_g%*
+v_gc	commentary.txt	/*v_gc*
 valgrind	valgrind.txt	/*valgrind*
 valgrind-intro	valgrind.txt	/*valgrind-intro*
 valgrind-issues	valgrind.txt	/*valgrind-issues*

@@ -9,15 +9,16 @@
 " Loading latex-suite when input file is detected to be tex file
 " This should be done automatically, if it does not work, 
 " uncomment the following
-filetype plugin indent on
+"filetype plugin indent on
+ru! filetype/tex.vim
 
 " Mache bei LaTeX Dateien latex als ausführende Datei
 " Aufruf :make
 "set makeprg=latex\ %
 set makeprg=pdflatex\ -interaction=nonstopmode\ %
 
-inoremap <buffer> " ,,``<LEFT>
-inoremap <buffer> ' ,`<LEFT>
+"inoremap <buffer> " ,,``<LEFT>
+"inoremap <buffer> ' ,`<LEFT>
 
 " TIP: if you write your \label's as \label{fig:something}, then if you
 " type in \ref{fig: and press <C-n> you will automatically cycle through
@@ -26,18 +27,19 @@ setlocal iskeyword+=:
 
 setlocal tw=75 foldenable
 
+setlocal formatoptions+=j
+
 " this is mostly a matter of taste. but LaTeX looks good with just a bit
 " of indentation.
 setlocal sw=2 
 
-
 " This mapping allows to choos in visible mode which region to comment out.
 " Just select a region and press ,co
 "vmap ,co :s/^\([.]*\)/% \1/<CR>
-cmap como :s/^/% /<CR>
+"cmap como :s/^/% /<CR>
 " and vice versa (remove the comment signs:
 "vmap ,uco :s/^% \([.]*\)/\1/<CR>
-cmap comu :s/^% //<CR>
+"cmap comu :s/^% //<CR>
 
 
 " LaTeX abbrevs

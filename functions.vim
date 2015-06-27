@@ -313,6 +313,7 @@ if has('user_commands')
         "command! -nargs=0 -bar WhatSyntax echomsg synIDattr(synID(line("."), col("."), 1), "name")
         "command! -nargs=0 WhatSyntax echomsg synIDattr(synID(line("."), col("."), 0), "name")
         command! -nargs=0 WhatSyntax call WhatSyntax()
+        command! -bar ShowSyntax :echo 'Normal '.join(map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")'))
 endif
 
 fu! WhatSyntax()

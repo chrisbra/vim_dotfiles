@@ -1,7 +1,7 @@
 *unicode.txt* Useful functions for use with unicode
 
 Author:  Christian Brabandt <cb@256bit.org>
-Version: 0.19 Wed, 16 Apr 2014 23:36:38 +0200
+Version: 0.20 Thu, 15 Jan 2015 20:47:07 +0100
                                                         *unicode-copyright*
 Copyright: (c) 2009 - 2014 by Christian Brabandt
            The VIM LICENSE applies to unicode.vim and unicode.txt
@@ -269,7 +269,7 @@ corresponding digraph, leaving chars, that don't form a digraph alone (the
 
 If you like to change the default map, put a line like this into your |.vimrc|
 >
-    nnoremap <f2> <Plug>(MakeDigraph)
+    nmap <f2> <Plug>(MakeDigraph)
 <
 Now, the <f2> can be used to generate digraphs from their pairs. This is
 done using an 'opfunc'-mapping (see |:map-operator|).
@@ -278,7 +278,7 @@ done using an 'opfunc'-mapping (see |:map-operator|).
 The unicode plugin can be used to make the |ga| command more useful. If you
 like to do this, then simply map the ga command like this in your |.vimrc| >
 
-    nnoremap ga <Plug>(UnicodeGA)
+    nmap ga <Plug>(UnicodeGA)
 
 This will invoke the |:UnicodeName| command whenever the ga command is used.
 
@@ -342,7 +342,14 @@ unicode#UnicodeName({val})			 *unicode#UnicodeName()*
 	returns the unicode name of the character with the decimal value {val}
 ==============================================================================
 6. unicode History                                    *unicode-plugin-history*
-    0.20 (unreleased)   - |unicode#Digraph| expects a 2 char string
+    0.21: (unreleased)  - escape ' properly for |digraph-completion| (reported
+			  by Konfekt in
+			  https://github.com/chrisbra/unicode.vim/issues/4
+			  thanks!)
+			- documentation update by Marco Hinz, thanks!
+			- remove QuitPre autocommand, that might quit your Vim
+			  unintentionally
+    0.20: Jan 15, 2015  - |unicode#Digraph| expects a 2 char string
 			- Install a |QuitPre| autocommand for |:UnicodeTable|
 			- Make |:Digraphs!| output the digraph name
     0.19: Apr 16, 2014  - |:UnicodeName| shows all digraphs per character

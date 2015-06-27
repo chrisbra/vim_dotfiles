@@ -1,7 +1,7 @@
 *ChangesPlugin.txt*  Print indication of changed lines for a buffer
 
 Author:  Christian Brabandt <cb@256bit.org>
-Version: 0.14 Wed, 14 Aug 2013 22:10:39 +0200
+Version: 0.15 Thu, 15 Jan 2015 21:16:40 +0100
 Copyright: (c) 2010-2014 by Christian Brabandt
 
                                            *ChangesPlugin-copyright*
@@ -100,6 +100,8 @@ or >
 provide an easy view to only see all modified lines. This will open the
 |location-list| buffer where you can easily see the affected lines. Pushing
 enter on any line, allows you to easily jump to that line in the buffer.
+Note: Only the first line of a hunk will be added. This makes it easier to use
+|:lnext| to jump from hunk to hunk.
 
                                                  *:CD* *:ChangesDiffMode*
 You might want to keep the diff-window open, so you can use it for modifying
@@ -120,9 +122,9 @@ command >
 and >
     :ChangesFoldDiff
 
-The non-bang versions of those commands will fold away all lines, that were
-not modified and the bang-versions (:CF!/:ChangesFoldDiff!) will reset
-the folding.
+An optional number argument can be given to select the number of context lines
+to be shown (default: context value from 'diffopt' or 3 if not given).
+Issuing the command again, will restore the previous state.
 
                                                  *:CT* *:ChangesStyleToggle*
 This command changes how changed lines will be highlighted. It toggles between
@@ -255,6 +257,13 @@ g:changes_sign_text_utf8 (default 1)
     If set, will use nice little UTF8 symbols for displaying the indicator
     signs.
 
+g:changes_max_filesize (default 500)
+------------------------------------
+
+    Maximum size in kbytes of a buffer, for which to perform the check. Larger
+    buffers will likely slow down Vim considerably, since it needs to perform
+    diffs and parse the result often.
+
                                                         *ChangesPlugin-colors*
 Specify different colors
 ------------------------
@@ -334,7 +343,14 @@ third line of this document.
     BF: Bugfix
     NF: New Feature
 
-    0.15: (unreleased)
+    0.16: unreleased:
+        BF: |:DC| should also undefine the dummy sign
+        BF: Check for <nowait> flag for mappings
+        BF: various improvements by Constantin Kulikov,
+        https://github.com/chrisbra/changesPlugin/pull/14, thanks!
+        BF: Document that |:ChangesFoldDiff| toggles
+        BF: Make |:ChangesFoldDiff| show context lines
+    0.15: Jan 15, 2015:                                                 {{{1
         NF: use |TextChanged| autocommand to update signs faster
         NF: use new utf8 symbols
         NF: Hide SignColumn
@@ -374,7 +390,9 @@ third line of this document.
         NF: InsertEnter/Leave autocommands to update signs
         NF: Stage hunks for git
         NF: Ignore special buffers (help window, quickfix buffer, command line
-        window..)
+            window..)
+        BF: Make |:CL| only add the first line of each hunk to the location
+            list.
     0.14: Aug 14, 2013:                                                 {{{1
         BF: Exception not caught (reported by Marco, thanks!)
         BF: Prevent flickering by resetting SignColumn on
