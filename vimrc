@@ -1,12 +1,9 @@
 "-------------------------------------------------------
 " Global .vimrc Settings from
 " Christian Brabandt <cb@256bit.org>
-" Last update: Fr 2014-05-02 13:50
 "-------------------------------------------------------
 " Personal Vim Configuration File
 "
-" do NOT behave like original vi
-" I like vim's features a lot better
 " This is already set automatically by sourcing a .vimrc
 " set nocp
 
@@ -14,37 +11,42 @@
 " First, check that the necessary capabilities are compiled-in
 " needs to be set first
 if has("multi_byte")
-        " (optional) remember the locale set by the OS
-        let g:locale_encoding = &encoding
-        " if already Unicode, no need to change it
-        " we assume that an encoding name is a Unicode one
-        " iff its name starts with u or U
-        if &encoding !~? '^u'
-                " avoid clobbering the keyboard's charset
-                if &termencoding == ""
-                        let &termencoding = &encoding
-                endif
-                " now we're ready to set UTF-8
-                set encoding=utf-8
-        endif
-        " heuristics for use at file-open
-	" how are different fileencodings determined?
-	" This is a list. The first that succeeds, will be used
-	" default is 'ucs-bom,utf-8,default,latin1'
-        set fileencodings=ucs-bom,utf-8,latin9
-        " optional: defaults for new files
-        "setglobal bomb fileencoding=utf-8
+  " (optional) remember the locale set by the OS
+  let g:locale_encoding = &encoding
+  " if already Unicode, no need to change it
+  " we assume that an encoding name is a Unicode one
+  " iff its name starts with u or U
+  if &encoding !~? '^u'
+    " avoid clobbering the keyboard's charset
+    if &termencoding == ""
+      let &termencoding = &encoding
+    endif
+    " now we're ready to set UTF-8
+    set encoding=utf-8
+  endif
+  " heuristics for use at file-open
+  " how are different fileencodings determined?
+  " This is a list. The first that succeeds, will be used
+  " default is 'ucs-bom,utf-8,default,latin1'
+  set fileencodings=ucs-bom,utf-8,latin9
+  " optional: defaults for new files
+  "setglobal bomb fileencoding=utf-8
 endif
 
+" don't want any menus, just an term like gvim
+" needs to come first, because :syn on and :filetype
+" would else load the system menu
 if has("gui")
-    " Do not load menus for gvim. Must come before filetype and syntax command!
-    set go=M
+  " Do not load menus for gvim. Must come before filetype and syntax command!
+  set go=cM
 endif
 
-if !empty(glob('$HOME/.vim/autoload/pathogen.vim'))
-    " Use pathogen as plugin manager
-    call pathogen#infect()
-    call pathogen#helptags()
+if !empty(glob('$HOME/.vim/autoload/pathogen.vim')) && v:version < 800
+  " Use pathogen as plugin manager
+  call pathogen#infect()
+  call pathogen#helptags()
+elseif v:version >= 800
+    " all plugins below ~/.vim/pack/dist/start/* are loaded automatically
 endif
 " Always have ~/.vim at first position.
 set rtp^=~/.vim
@@ -52,7 +54,15 @@ set rtp^=~/.vim
 set hidden
 
 " Enable file modelines (default is ok)
-set modeline modelines=1
+set modeline modelines=5
+
+if exists('+fixeol')
+  set nofixeol
+endif
+
+if exists('+belloff')
+  set belloff=all
+endif
 
 " don't scan included files
 set complete-=i
@@ -65,24 +75,22 @@ set cpo+=$
 set bg=dark
 " Turn on filetype detection plugin and indent for specific
 if exists(":filetype") == 2
-    filetype plugin indent on
+  filetype plugin indent on
 endif
 " Tweak timeouts, because the default is too conservative
 " This setting is taken from :h 'ttimeoutlen'
 set timeout timeoutlen=3000 ttimeoutlen=100
 
-" Turn on: auto-indent, ruler, show current mode,
-"          showmatching brackets, show additional info,
+" Turn on: show current mode, showmatching brackets, show additional info,
 "          show always status line
-set ai ruler showmode showmatch wildmenu showcmd ls=2
+set showmode showmatch wildmenu showcmd ls=2
 
 " Search options: ignore case, increment search, no highlight, smart case
 " nostartofline option
 set incsearch nohlsearch smartcase nostartofline ignorecase
 " show partial lines
 set display+=lastline
-"whichwrap those keys move the cursor to the next line if at the end of the
-"line
+" whichwrap those keys move the cursor to the next line if at the end of the line
 set ww=<,>
 " when using :scrollbind, also bind scrolling horizontally
 set scrollopt+=hor
@@ -97,39 +105,31 @@ set wildmode=list:longest,longest:full
 " Always turn syntax highlighting on
 " should come after filetype plugin command
 if has("syntax")
-    syntax on
-    
-    " highlight VCS conflict markers
-    " highlight strange Whitespace
-    aug CustomHighlighting
-	au!
-	au WinEnter * if !exists("w:custom_hi1") | match ErrorMsg /^\(<\|=\|>\)\{7\}\([^=].\+\)\?$/ |let w:custom_hi1 = 1|endif
-	au WinEnter * if !exists("w:custom_hi2") | match ErrorMsg /[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]/ | let w:custom_hi2 = 1| endif
-    aug END
+  syntax on
 
-    " Make VertSplit take the same background as Normal
-    hi! link VertSplit Normal
-    if has("conceal")
-	hi! link Conceal Normal
-    endif
+  " highlight VCS conflict markers
+  " highlight strange Whitespace
+  aug CustomHighlighting
+    au!
+    au WinEnter * if !exists("w:custom_hi1") | let w:custom_hi1 = matchadd('ErrorMsg', '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$') | endif
+    au WinEnter * if !exists("w:custom_hi2") | let w:custom_hi2 = matchadd('ErrorMsg', '[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]') |  endif
+  aug END
 endif
 
 " Tabstop options
-" one tab indents by 8 spaces (this is the default for most display utilities)
-" and so it will look like the same
-"set ts=8
+set ts=2
+" the amount to indent when using ">>" or autoindent (zero means, follow
+" 'tabstop' option)
+set shiftwidth=0
 " softtabstops make you feel, a tab is 4 spaces wide, instead the default
-" 8. This means display utilities will still see 8 character wide tabs,
+" 8. This means display utilities will still see 8 character wide tabs, 
 " while in vim, a tab looks like 4 characters
-set softtabstop=4
-" the amount to indent when using ">>" or autoindent.
-set shiftwidth=4
+" (-1 means, follow shiftwidth option)
+set softtabstop=-1
 " round indent to multiple of 'sw'
 set shiftround
-" Set backspace (BS) mode: eol,indent,start
-set bs=2
-" Set shell
-set sh=zsh
+" Set backspace (BS): eol,indent,start and shell, decrease updatetime a bit
+set bs=2 sh=zsh updatetime=1000
 
 " Numberformat to use, unsetting bascially only allows decimal
 " octal and hex may make trouble if tried to increment/decrement
@@ -139,13 +139,13 @@ set nrformats=
 
 " Breakindent
 if exists('+breakindent')
-    set bri
-    set briopt=min:20,sbr
+  set bri
+  set briopt=min:20,sbr
 endif
 
-if exists('+langnoremap')
-    " prevent langmap option from remapping the right side of a mapping
-    set langnoremap
+" prevent langmap option from remapping the right side of a mapping
+if exists('+langremap')
+  set nolangremap
 endif
 
 " set dictionary. Press <CTRL>X <CTRL> K for looking up
@@ -153,104 +153,126 @@ endif
 set dictionary=/usr/share/dict/words
 
 if has("autocmd")
-    aug custom_BufRead
-	au!
-	au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
-    augroup END
-    aug custom_VimResized
-        au!
-        au VimResized * :wincmd =
-      augroup END
+  aug custom_BufRead
+    au!
+    au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
+    " open file at last position (:h last-position-jump)
+    au BufRead * if line("'\"") > 1 && line("'\"") <= line("$") && &filetype !=# 'gitcommit' | exe "normal! g`\"zvzz" | endif
+  augroup END
 endif
-
-if ($OS =~"Windows")
-    let g:netrw_scp_cmd="\"c:\\Program Files\\PuTTY\\pscp.exe\" -q -batch"
-endif
-
-" Change the disturbing pink color for omnicompletion
-hi Pmenu guibg=DarkRed
-set spellfile=~/.vim/spellfile.add
 
 " change language -  get spell files from http://ftp.vim.org/pub/vim/runtime/spell/
 " cd ~/.vim/spell && wget http://ftp.vim.org/pub/vim/runtime/spell/de.latin1.spl
 " change to german:
-set spelllang=de,en
+set spelllang=de,en spellfile=~/.vim/spellfile.add
 " set maximum number of suggestions listed to top 10 items
 set sps=best,10
 
-" highlight matching parens:
 " Default for matchpairs: (:),[:],{:},<:>
 set matchpairs+=<:>
-highlight MatchParen term=reverse ctermbg=7 guibg=cornsilk
 
 if has("folding")
-    set foldenable foldmethod=marker foldlevelstart=0
+  set foldenable foldmethod=marker foldlevelstart=0
 endif
 
 " Store more items in the viminfo
 set viminfo='100,<50,s10,h,!,:1000
 
-let &titleold = fnamemodify(&shell, ":t")
-let _bg = &bg " save current bg, might get reset below
-
-if exists("$PUTTY_TERM")
-    " putty works mostly like xterm (in fact more features work OOTB
-    " pretending to be an xterm compatible terminal (cursor keys, etc),
-    " so use that one instead of putty-256color
-    set term=xterm-256color t_Co=256 title
-    exe "set t_ti=\e[?1049h t_te=\e[?1049l"
+"if exists("$PUTTY_TERM")
+"    putty works mostly like xterm (in fact more features work OOTB
+"    pretending to be an xterm compatible terminal (cursor keys, etc),
+"    so use that one instead of putty-256color
+"    exe "set t_ti=\e[?1049h t_te=\e[?1049l"
+if &term =~ 'tmux'
+  set t_Co=256
 elseif (&term =~ '^screen')
-  "if expand("$COLORTERM") !~ 'rxvt'
-    set t_Co=256
-    set title
-    set t_ts=k
-    set t_fs=\
-    set titlelen=15
-    " set information for title in screen (see :h 'statusline')
-    set titlestring=%t%=%<%(\ %{&encoding},[%{&modified?'+':'-'}],%p%%%)
-    com! -complete=help -nargs=+ H :!screen -t 'Vim-help' vim -c 'help <args>' -c 'only'
-    " Make Vim recognize xterm escape sequences for Page and Arrow
-    " keys combined with modifiers such as Shift, Control, and Alt.
-    " See http://www.reddit.com/r/vim/comments/1a29vk/_/c8tze8p
-    " needs in tmux.conf: setw -g xterm-keys on
-    " Page keys http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/FAQ
-    execute "set t_kP=\e[5;*~"
-    execute "set t_kN=\e[6;*~"
+  set t_Co=256
+  set title
+  "set t_ts=k
+  "set t_fs=\
+  set titlelen=15
+  " set information for title in screen (see :h 'statusline')
+  set titlestring=%t%=%<%(\ %{&encoding},[%{&modified?'+':'-'}],%p%%%)
+  " Make Vim recognize xterm escape sequences for Page and Arrow
+  " keys combined with modifiers such as Shift, Control, and Alt.
+  " See http://www.reddit.com/r/vim/comments/1a29vk/_/c8tze8p
+  " needs in tmux.conf: setw -g xterm-keys on
+  " Page keys http://sourceforge.net/p/tmux/tmux-code/ci/master/tree/FAQ
+  execute "set t_kP=\e[5;*~"
+  execute "set t_kN=\e[6;*~"
 
-    " Arrow keys http://unix.stackexchange.com/a/34723
-    execute "set <xUp>=\e[1;*A"
-    execute "set <xDown>=\e[1;*B"
-    execute "set <xRight>=\e[1;*C"
-    execute "set <xLeft>=\e[1;*D"
+  " Arrow keys http://unix.stackexchange.com/a/34723
+  execute "set <xUp>=\e[1;*A"
+  execute "set <xDown>=\e[1;*B"
+  execute "set <xRight>=\e[1;*C"
+  execute "set <xLeft>=\e[1;*D"
+"   mode dependent cursor (switches between block and thin bar)
+"   let &t_ti.="\e[1 q"
+"   let &t_SI.="\e[5 q"
+"   let &t_EI.="\e[1 q"
+"   let &t_te.="\e[0 q"
 elseif (&term =~ 'xterm-256\|xterm-color\|xterm')
-    " Let's have 256 Colors. That rocks!
-    " Putty and screen are aware of 256 Colors on recent systems
-    set t_Co=256 title
-    "let &titleold = fnamemodify(&shell, ":t")
-    "set t_AB=^[[48;5;%dm
-    "set t_AF=^[[38;5;%dm
+  " Let's have 256 Colors. That rocks!
+  " Putty and screen are aware of 256 Colors on recent systems
+  set t_Co=256 title
+"  let &titleold = fnamemodify(&shell, ":t")
+"  set t_AB=^[[48;5;%dm
+"  set t_AF=^[[38;5;%dm
+"  let &t_ti.="\e[1 q"
+"  let &t_SI.="\e[5 q"
+"  let &t_EI.="\e[1 q"
+"  let &t_te.="\e[0 q"
 endif
 
 if !empty(&t_ut)
-    " see http://snk.tuxfamily.org/log/vim-256color-bce.html
-    " Not neccessary? (see below
-    let &t_ut=''
+  " see http://snk.tuxfamily.org/log/vim-256color-bce.html
+  " Not neccessary? (see below
+  let &t_ut=''
 endif
 
 if (&t_Co == 256) || (&t_Co == 88) || has("gui_running")
-    "let g:solarized_termcolors=256
-    colorscheme molokai
-    "colorscheme gruvbox
+  "let g:solarized_termcolors=256
+  colorscheme janah
 else
-    colorscheme desert
+  colorscheme desert
 endif
 
+" gnome terminal sucks
+if (exists("$COLORTERM") && $COLORTERM is# 'gnome-terminal')
+  set term=builtin_ansi
+  set t_Co=256
+  colorscheme molokai
+endif
+
+" Some highlighting options:
+"
+" Make VertSplit take the same background as Normal
+hi! link VertSplit Normal
+" Change the disturbing pink color for omnicompletion
+hi Pmenu guibg=DarkRed
+" highlight matching parens:
+highlight MatchParen term=reverse ctermbg=7 guibg=cornsilk
+if has("conceal")
+  hi! link Conceal Normal
+endif
+
+" tmux does support true color mode
+"if exists('+termguicolors')
+"    set termguicolors
+"    set t_8f=[38;2;%lu;%lu;%lum
+"    set t_8b=[48;2;%lu;%lu;%lum
+"endif
+
 " restore bg value, might have been reset by the colorscheme
-let &bg=_bg
-unlet _bg
+" (might reset the colorscheme?)
+"let &bg=_bg
+"unlet _bg
 
 " In Diff-Mode turn off Syntax highlighting
-if &diff | syntax off | endif
+if &diff
+  syntax off
+  let &diffexpr='EnhancedDiff#Diff("git diff", "--diff-algorithm=patience")'
+endif
 
 if has('cscope')
   set cscopetag cscopeverbose
@@ -260,33 +282,34 @@ if has('cscope')
 endif
 
 if has('persistent_undo')
-    set undofile
-    set undodir=~/.vim/undo/
+  set undofile
+  set undodir=~/.vim/undo/
 endif
 
 " Add ellipsis … to the digraphs
 " this overwrite the default, but my current font won't display that
 " letter anyway ;)
-digraphs .3 8230
-digraphs -- 8212
-digraphs \|- 166
+if has('digraphs')
+  digraphs .3 8230
+  digraphs \|- 166
+endif
 
 if &encoding == "utf-8"
-    if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
-        exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
-	exe "set sbr=\u21b3"
-    else
-        " Putty can't display all nice utf-8 chars
-        "exe "set listchars=conceal:·,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,space:\ub7"
-        exe "set listchars=conceal:\u00b7,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,nbsp:\u03c7"
-	exe "set sbr=\u2500"
-    endif
-    exe "set fillchars=vert:\u2502,fold:\u2500,diff:\u2014"
+  if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
+    exe "set listchars=nbsp:\u2423,conceal:\u22ef,tab:\u2595\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6"
+    exe "set sbr=\u21b3"
+  else
+    " Putty can't display all nice utf-8 chars
+    "exe "set listchars=conceal:·,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,space:\ub7"
+    exe "set listchars=conceal:\u00b7,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,nbsp:\u03c7"
+    exe "set sbr=\u2500"
+  endif
+  exe "set fillchars=vert:\u2502,fold:\u2500,diff:\u2014"
 else
-    " Special characters that will be shown, when set list is on
-    set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
-    " Display a `+' for wrapped lines
-    set sbr=+
+  " Special characters that will be shown, when set list is on
+  set listchars=eol:$,trail:-,tab:>-,extends:>,precedes:<,conceal:+
+  " Display a `+' for wrapped lines
+  set sbr=+
 endif
 
 " Shift-tab on GNU screen
@@ -294,21 +317,12 @@ endif
 set t_kB=[Z
 
 if v:version > 704 || v:version == 704 && has("patch711")
-    if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
-	exe "set listchars+=space:\u2423"
-    else
-	exe "set listchars+=space:\ub7"
-    endif
+  if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
+    exe "set listchars+=space:\u2423"
+  else
+    exe "set listchars+=space:\ub7"
+  endif
 endif
-
-" This script contains plugin specific settings
-source ~/.vim/plugins.vim
-" This script contains mappings
-source ~/.vim/mapping.vim
-source ~/.vim/functions.vim
-
-" source matchit
-ru macros/matchit.vim
 
 " experimental and debug settings
 " (possibly not even available in vanilla vim)
@@ -317,25 +331,56 @@ ru macros/matchit.vim
 " In case /tmp get's clean out, make a new tmp directory for vim:
 if has("user_commands")
   command! Mktmpdir call mkdir(fnamemodify(tempname(),":p:h"),"",0700)
+  " Increase/Decrease GVims Fontsize
+  command! Bigger  :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)+1', '')
+  command! Smaller :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)-1', '')
 endif
 
 " if ctag or cscope open a file that is already opened elsewhere, make sure to
 " open it in Read-Only Mode
 " http://groups.google.com/group/vim_use/msg/5a1726ea0fd654d1
 if exists("##SwapExists")
-    augroup Custom_Swap
-	au!
-	autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
-    augroup END
+  augroup Custom_Swap
+    au!
+    autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
+  augroup END
 endif
 
-" open file at last position
-" :h last-position-jump
-au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"zvzz" | endif
+" skip for vim.tiny
+if 1
+  " This script contains plugin specific settings
+  source ~/.vim/plugins.vim
+  " This script contains mappings
+  source ~/.vim/mapping.vim
+  source ~/.vim/functions.vim
 
-" Special Search patterns:
-let g:SEARCH_VISUAL_END='\%(\%(\%V.*\%V.\)\@>\zs\(.\|$\)\)'
+  " source matchit
+  ru macros/matchit.vim
 
-if has("nvim")
-    source nvimrc
+  " Special Search patterns:
+  let g:SEARCH_VISUAL_END='\%(\%(\%V.*\%V.\)\@>\zs\(.\|$\)\)'
+  " Search literally!
+  com! -nargs=1 Search :let @/='\V'.escape(<q-args>, '\\')| normal! n
+
+  function! SetGuiFont()
+    if has("gui_gtk") && !has("win32")
+      let &guifont="Ubuntu Mono derivative Powerline 12"
+      "set linespace=-1
+    endif
+  endfunction
+
+  if !exists('#VimStartup#GuiEnter')
+    augroup VimStartup
+      au!
+      autocmd GuiEnter * :call SetGuiFont()
+    augroup end
+  endif
+
+  if executable('ag')
+    set grepprg=ag
+  elseif executable('sift')
+    set grepprg=sift
+  endif
 endif
+
+" vim:et sts=-1 ts=2 sw=0
