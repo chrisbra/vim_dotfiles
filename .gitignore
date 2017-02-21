@@ -4,6 +4,7 @@
 .VimballRecord
 .cache/*
 .netrwhist
+backup/*
 GetLatest/*
 autoload/*
 bundle/*
