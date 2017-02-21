@@ -12,6 +12,7 @@ contrib/*
 doc/*
 ftdetect/*
 pack/dist/start/alt/*
+pack/dist/start/base16-vim
 plugin/*
 spell/*
 spellfile*
