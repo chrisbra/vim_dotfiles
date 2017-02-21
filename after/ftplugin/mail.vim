@@ -8,6 +8,7 @@
 
 "setlocal foldmethod=expr foldlevel=1 foldminlines=2 
 "setlocal foldexpr=strlen(substitute(substitute(getline(v:lnum),'\\s','','g'),'[^>].*­','','')) 
+"setlocal foldexpr=strlen(substitute(matchstr(getline(v:lnum),'\\v^\\s*%(\\>\\s*)+'),'\\s','','g'))
 "setlocal foldexpr=strlen(substitute(getline(v:lnum),'\\s*\\ze>\\\|.*','','g'))
 
 setl tw=70

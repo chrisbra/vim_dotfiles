@@ -13,15 +13,17 @@ com! Oldfiles		:call misc#List('oldfiles')
 com! LastChange     :echo " start: ".string(getpos("'["))." end: ".string(getpos("']"))
 
 " C-L should also clear search highlighting "{{{2
-nnoremap <silent> <c-l> <c-l>:nohls<cr>
+if maparg("<c-l>", 'n') == ''
+  nnoremap <silent> <c-l> <c-l>:nohls<cr>
+endif
 
 " Make certain keys in insert mode undoable "{{{2
 " make <BS> <DEL> <C-U> and <C-W> undoable
 " h i_Ctrl-g_u
 inoremap <C-U> <C-G>u<C-U>
 inoremap <C-W> <C-G>u<C-W>
-inoremap <BS> <C-G>u<BS>
-inoremap <DEL> <C-G>u<DEL>
+"inoremap <BS> <C-G>u<BS>
+"inoremap <DEL> <C-G>u<DEL>
 " let i_Ctrl-R be undoable (should also be redoable with '.')
 inoremap <c-r> <c-g>u<c-r>
 
@@ -60,7 +62,7 @@ function! Csfind(cmd, querytype, name)
 			" try to find a cscope.out file
 				let cscopefile = findfile("cscope.out", ".;")
 				if empty(cscopefile)
-					throw "No Cscope database found!"
+					throw "E:No Cscope database found!"
 				else
 					exe "cs add" cscopefile
 				endif
@@ -201,6 +203,7 @@ if 0
   nnoremap <silent> N :call SearchPrev()<CR>
 endif
 
+if 0
 " Damian Conway's Die Blinkënmatchen: highlight matches
 nnoremap <silent> n n:call HLNext(0.2)<cr>
 nnoremap <silent> N N:call HLNext(0.2)<cr>
@@ -213,6 +216,7 @@ function! HLNext (blinktime)
   call matchdelete(ring)
   redraw
 endfunction
+endif
 
 " Command Abbreviation {{{2
 " simple version of cmdalias.vim
@@ -224,8 +228,9 @@ command! -nargs=+ CommandCabbr call CommandCabbr(<f-args>)
 CommandCabbr ccab CommandCabbr
 
 " Capture messages in new window {{{2
-:com! Messages :redir =>a|sil mess|redir end|new|set buftype=nofile|0put =a
-" Quickfix Do command
+:com! -nargs=1 Exe :redir => a|exe "sil " <q-args>|redir end|new |set buftype=nofile|0put =a
+:com! Messages Exe mess
+" Quickfix Do command {{{2
 " :QFDo! iterates over location list
 " :QFDo iterates over quickfix list
 " Define Function Quick-Fix-List-Do:
@@ -251,6 +256,24 @@ fun! QFDo(bang, command)
 endfunc 
 
 com! -nargs=1 -bang Qfdo :call QFDo(<bang>0,<q-args>) 
+
+" when typing : and = let it have aligned automatically.
+"inoremap <silent> :   :<Esc>:call <SID>align(':')<CR>a
+"inoremap <silent> =   =<Esc>:call <SID>align('=')<CR>a
+
+function! s:align(aa)
+  if !exists(":Tabularize")
+	return
+  endif
+  let p = '^.*\s'.a:aa.'\s.*$'
+  if (getline(line('.')-1) =~# p || getline(line('.')+1) =~# p)
+    let column = strlen(substitute(getline('.')[0:col('.')],'[^'.a:aa.']','','g'))
+    let position = strlen(matchstr(getline('.')[0:col('.')],'.*'.a:aa.':\s*\zs.*'))
+    exec 'Tabularize/'.a:aa.'/l1'
+    normal! 0
+    call search(repeat('[^'.a:aa.']*'.a:aa,column).'\s\{-\}'.repeat('.',position),'ce',line('.'))
+  endif
+endfunction
 " Restore: "{{{2
 let &cpo=s:cpo
 unlet s:cpo

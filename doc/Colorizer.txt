@@ -389,6 +389,18 @@ looking at my Amazon whishlist: http://www.amazon.de/wishlist/2BKAHE8J7Z6UW
   https://github.com/chrisbra/Colorizer/issues/41, thanks!)
 - correctly check for patch 7.4.083 (:keeppatterns modifier, reported by
   gbell12 in https://github.com/chrisbra/Colorizer/issues/42, thanks!)
+- disable BufLeave autocommand to disable colors
+- basic Neovim support (also should work with TrueColor in Terminal)
+- Make |:RGB2term| always init colortable, so that when resetting 't_Co'
+  it will work correctly
+- Make it work with Vims Term Truecolor feature (patch 7.4.1770)
+- Make it work with neovim fixes https://github.com/chrisbra/Colorizer/issues/45
+  and https://github.com/chrisbra/Colorizer/issues/46
+- Support css colors: #rrggbbaa format
+- handle hsla values correctly
+- clear css cssColor syntax rule when ":ColorHighlight syntax" in css files is
+  used. fixes https://github.com/chrisbra/Colorizer/issues/50 reported by
+  msva, thanks!
 
 0.11 Jan 15, 2015 {{{1
 - use |TextChanged| autocommand if possible

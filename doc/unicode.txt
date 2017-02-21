@@ -13,7 +13,7 @@ Copyright: (c) 2009 - 2014 by Christian Brabandt
 
         1.  Functionality...........................: |unicode-plugin|
 	2.  Commands................................: |unicode-commands|
-        3.  Completions.............................: |unicode-plugin-usage|
+        3.  Completions.............................: |unicode-completion|
         4.  Mappings................................: |unicode-mappings|
         5.  Public functions........................: |unicode-functions|
         6.  Changelog...............................: |unicode-plugin-history|
@@ -39,7 +39,7 @@ easily. It serves 3 main purposes:
     2) Identify Characters
        This plugin provides the |:UnicodeName| function to identify the
        character under the cursor similar to the builtin command |ga|. The
-       |:SearchUnicode| command can be used to search for a unicode character
+       |:UnicodeSearch| command can be used to search for a unicode character
        with a given name or value.
 
     3) Ease the use of digraphs
@@ -95,17 +95,32 @@ your report.
 Suppose, you want to know, what the Unicode Name for the Character under the
 cursor is. You simply enter the ex command: >
 
-    :UnicodeName [reg]
+    :UnicodeName [reg [type]]
 
-The plugin will then output the character, the character's hexadecimal value
-and the official Unicode name.
+The plugin will then output the character, the character's hexadecimal value,
+the official Unicode name and the search pattern to search for that character.
 
 Additionally, if there exists a digraph for that character, it will also be
 shown in paranthesis (in case of several digraphs for that character, all
 will be shown, separated by comma).
 
-If you specify a register name, the message will also be saved into that
+The search pattern is always the last item, it starts with a "/"
+
+An example might look like this: >
+
+    '€' U+20AC Dec:8364 EURO SIGN (=e Eu) &euro; /\%u20ac
+<
+You can see, this was issued on the Euro sign. The first value is the
+character, the second item is the Unicode Codepoint followed by the decimal
+value of the character, followed by the official Unicode Name. After the name,
+the different digraphs are put in paranthesis, followed by the html entity
+name followed by the regular expression atom, to search for this character.
+
+If you specify a register name [reg], the message will also be saved into that
+register. If you optionally specify a type [type] (either one of digraph,
+html, name, regex or value) only that part of the output will be stored in the
 register.
+
 								*:Digraphs*
     :Digraphs
 
@@ -125,16 +140,20 @@ an argument to the command: >
 
 displays all digraphs, that match 'A' (e.g. all that can be created with the
 letter A or whose digraph matches the letter 'A'.)
+Note: This is a silly example, that can take some time. You should always be
+able to abort that by pressing |CTRL-C|. To output progress information, call
+the command with the |:verbose| command modifier.
 
-If you know the name, you can also search for the unicode name:
+If you know the name, you can also search for the unicode name: >
 
     :Digraphs copy
 
 will display all Digraphs, where their unicode name contains the word "copy"
 (e.g. copyright symbol). Case is ignored. Note, you need at least to enter 2
 characters.
-							    *:SearchUnicode*
-    :SearchUnicode [name|nr]
+							    *:UnicodeSearch*
+>
+    :UnicodeSearch [name|nr]
 
 Outputs a list of unicode characters whose decimal value equals <nr> (use U+
 or 0x prefix to search using hexadecimal values) or whose name matches the
@@ -142,18 +161,72 @@ given name (can be a regular expression). (Matching is done with the case
 being ignored.) If possible, digraphs chars are displayed in (), separated by
 commas and html entitities are displayed as well. Note, depending on your
 search term, this might be a little bit slow.
+
+You can use the bang "!" attribute, it will prompt you, which item to insert
+at the current cursor position (only when your buffer is writable).
 							    *:UnicodeTable*
+>
     :UnicodeTable
 
 Creates a new window with a table of all Unicode characters.
 
-							    *:DownloadUnicode*
-    :DownloadUnicode
+							    *:UnicodeDownload*
+>
+    :UnicodeDownload
 
 Downloads the Unicode data. Can also be used to update the local data file.
 
+							    *:DigraphNew*
+>
+    :DigraphNew {char1}{char2}  {pattern}
+
+can be used to create a new digraph whose unicode name matches {pattern}. 
+
+If {pattern} is a hexadecimal pattern, create a digraph for the mentioned
+character.
+
+Example: >
+    DigraphNew bh latin small.*b with stroke
+    DigraphNew DH d0
+
+This command supports shortcut letter names in the style of Perl's
+"charnames" pragma: if {pattern} has the form {scriptname}:{charname},
+then it is looked up as a letter {charname} inside a script
+{scriptname}: the standard Unicode names are searched for the names
+>
+      {scriptname} CAPITAL LETTER {charname}
+      {scriptname} SMALL LETTER {charname}
+      {scriptname} LETTER {charname}
+
+in that order. If {charname} does not contain any uppercase letters,
+then the CAPITAL variant is ignored, otherwise the SMALL variant is
+ignored. The first character found which corresponds to one of these
+names is assigned to the digraph. For example
+
+>
+    Short                   Full
+    -----------------------------------------------------------------
+    Greek: Sigma            GREEK CAPITAL LETTER SIGMA
+    greek: siGma            GREEK CAPITAL LETTER SIGMA
+    Greek: sigma            GREEK SMALL LETTER SIGMA
+    Greek: final sigma      GREEK SMALL LETTER FINAL SIGMA
+    Greek: final Sigma      {Error, there is no capital final sigma!}
+    ֑Hebrew: shin            HEBREW LETTER SHIN
+    ֑Hebrew: sheva           {Error, not a letter but a mark!}
+                            ("hebr.*sheva" will work, however!)
+
+Unlike in Perl both {scriptname} and {charname} can be patterns:
+"imp.*ar.*:al.*" will match IMPERIAL ARAMAIC LETTER ALEPH!
+
+Note that while this feature can save tedious repetetive typing
+it uses ordinary pattern matching and can NOT resolve nonexistent
+letters like capital final sigma above or funny lowercase/uppercase
+name pairs like U+0195 LATIN SMALL LETTER HV and 
+U+01F6 LATIN CAPITAL LETTER HWAIR!
+
+
 ==============================================================================
-3. Completing Functions
+3. Completions
                                         *i_CTRL-X_CTRL-Z* *unicode-completion*
 3.1 Completing Unicode Characters
 ---------------------------------
@@ -203,7 +276,7 @@ UnicodeData.txt, enter the URL as: >
 
 To force downloading the file from that new url, enter >
 
-    :DownloadUnicode
+    :UnicodeDownload
 
 You can also use this command to update your local unicode data file.
 
@@ -221,6 +294,21 @@ window, set the variable >
     let g:Unicode_ShowPreviewWindow = 1
 <
 in your |.vimrc|.
+
+If you want the digraph generation to be restricted to certain digraphs only,
+set the variable to the decimal codes of those digraphs. E.g. to only allow
+generation of the € sign and umlauts, you would add to your |.vimrc| : >
+
+    let g:Unicode_ConvertDigraphSubset = [ 
+	\ char2nr("€"),
+	\ char2nr("ä"),
+	\ char2nr("Ä"),
+	\ char2nr("ö"),
+	\ char2nr("Ö"),
+	\ char2nr("ü"),
+	\ char2nr("Ü"),
+	\ char2nr("ß") ]
+<
 
                                         *i_CTRL-X_CTRL-G* *digraph-completion*
 3.2 Completing Digraphs
@@ -265,7 +353,11 @@ look like this: >
 
 Note, that all pairs of base characters have been converted to their
 corresponding digraph, leaving chars, that don't form a digraph alone (the
-'ß')
+'ß').
+
+If you like to specify, which characters are allowed to be converted to a
+digraph, you can define this using the variable Unicode_ConvertDigraphSubset
+(see above).
 
 If you like to change the default map, put a line like this into your |.vimrc|
 >
@@ -296,7 +388,7 @@ These functions are available:
 
 unicode#FindUnicodeBy({match}])			*unicode#FindUnicodeBy()*
 	Searches the unicode data for {match} and returns a list of dicts,
-	each dict representing one dict. The dict can have the following
+	each dict representing one match. The dict can have the following
 	keys:
 		"name"	Unicode name
 		"glyph"	Unicode Codepoint
@@ -349,6 +441,47 @@ unicode#UnicodeName({val})			 *unicode#UnicodeName()*
 			- documentation update by Marco Hinz, thanks!
 			- remove QuitPre autocommand, that might quit your Vim
 			  unintentionally
+			- Add BOM for Byte Order Mark
+			- Allow specify, which digraphs are being replaced
+			  by the g:Unicode_ConvertDigraphSubset variable
+			  and some performance improvements for |:Digraphs|
+			  (reported by stepk in 
+			  https://github.com/chrisbra/unicode.vim/issues/8
+			  thanks!)
+			- Fix some small bugs, regarding digraph generation
+			  |<Plug>(MakeDigraph)|
+			- When searching for a digraph or unicode character
+			  highlight the search pattern
+			- when calling |:UnicodeName| make sure, to use the
+			  english language (makes parsing ga work correctly)
+			- Make |:UnicodeName| output the search string
+			- Make |:UnicodeName| optionally output only part of
+			  the character output (e.g. digraph, html, name,
+			  regex or value)
+			- Fix a parsing error for |:UnicodeName| reported by
+			  daveyarwood in 
+			  https://github.com/chrisbra/unicode.vim/issues/9
+			  thanks!)
+			- always require to match case when completing
+			  digraphs (reported by jnd-au in
+			  https://github.com/chrisbra/unicode.vim/issues/10
+			  thanks!)
+			- AirlineIntegration of the |:UnicodeTable| command
+			- call public unicode function always with :Unicode
+			  prefix (e.g. rename :SearchUnicode to
+			  |:UnicodeSearch| and :DownloadUnicode to
+			  |:UnicodeDownload|
+			- fix |:UnicodeSearch| expected a string > 1 char
+			  (reported by hseg in
+			  https://github.com/chrisbra/unicode.vim/issues/15,
+			  thanks!)
+			- new command |:DigraphNew| to define a new digraph
+			  (suggested by bpj in
+			  https://github.com/chrisbra/unicode.vim/issues/14
+			  thanks!)
+			- only map keys, if not already mapped to (suggested
+			  in https://github.com/chrisbra/unicode.vim/issues/17)
+			- Allow register "+", "*" and "/" for |:UnicodeName|
     0.20: Jan 15, 2015  - |unicode#Digraph| expects a 2 char string
 			- Install a |QuitPre| autocommand for |:UnicodeTable|
 			- Make |:Digraphs!| output the digraph name

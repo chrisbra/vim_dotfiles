@@ -16,6 +16,7 @@ endfu
 scriptencoding utf-8
 let s:plugin = fnamemodify(expand("<sfile>"), ':t:r')
 let s:i_path = fnamemodify(expand("<sfile>"), ':p:h'). '/'. s:plugin. '/'
+let s:execute = exists("*execute")
 
 
 let s:sid    = <sid>GetSID()
@@ -136,7 +137,7 @@ fu! <sid>Init(...) "{{{1
 	let s:Bookmarks = split("abcdefghijklmnopqrstuvwxyz" .
 				\ "ABCDEFGHIJKLMNOPQRSTUVWXYZ", '\zs')
 
-	let s:SignHook = exists("g:Signs_Hook") ? g:Signs_Hook : ''
+	let s:SignHook = exists("w:Signs_Hook") ? w:Signs_Hook : ''
 
 	let s:SignQF   = exists("g:Signs_QFList") ? g:Signs_QFList : 0
 
@@ -159,19 +160,19 @@ fu! <sid>Init(...) "{{{1
 	endif
 	" highlight line
 	if !hlexists("SignLine1") || empty(synIDattr(hlID("SignLine1"), "ctermbg"))
-		exe "hi SignLine1 ctermbg=238 guibg=#403D3D"
+		exe "hi default SignLine1 ctermbg=238 guibg=#403D3D"
 	endif
 	if !hlexists("SignLine2") || empty(synIDattr(hlID("SignLine2"), "ctermbg"))
-		exe "hi SignLine2 ctermbg=208 guibg=#FD971F"
+		exe "hi default SignLine2 ctermbg=208 guibg=#FD971F"
 	endif
 	if !hlexists("SignLine3") || empty(synIDattr(hlID("SignLine3"), "ctermbg"))
-		exe "hi SignLine3 ctermbg=24  guibg=#13354A"
+		exe "hi default SignLine3 ctermbg=24  guibg=#13354A"
 	endif
 	if !hlexists("SignLine4") || empty(synIDattr(hlID("SignLine4"), "ctermbg"))
-		exe "hi SignLine4 ctermbg=1  guibg=Red"
+		exe "hi default SignLine4 ctermbg=1  guibg=Red"
 	endif
 	if !hlexists("SignLine5") || empty(synIDattr(hlID("SignLine5"), "ctermbg"))
-		exe "hi SignLine5 ctermbg=190 guibg=#DFFF00"
+		exe "hi default SignLine5 ctermbg=190 guibg=#DFFF00"
 	endif
 
 	" Highlighting for the bookmarks
@@ -221,23 +222,26 @@ fu! <sid>IndentFactor() "{{{1
 endfu
 
 fu! <sid>ReturnSignDef() "{{{1
-	redir => a
-		sil sign list
-	redir END
+	let a = <sid>Redir(':sil sign list')
 	let b = split(a, "\n")[2:]
 	call map(b, 'split(v:val)[1]')
 	return filter(b, 'v:val=~''^\(Sign\)\|\(\d\+$\)''')
 endfu
 
 fu! <sid>ReturnSigns(buffer) "{{{1
-	redir => a 
-		exe "sil sign place buffer=". a:buffer 
-	redir end
+	let lang=v:lang
+	if lang isnot# 'C'
+		sil lang mess C
+	endif
+	let a = <sid>Redir(':sil sign place buffer='.a:buffer)
 	let b = split(a, "\n")[2:]
 	" Remove old deleted Signs
 	call <sid>RemoveDeletedSigns(filter(copy(b),
 		\ 'matchstr(v:val, ''deleted'')'))
 	call filter(b, 'matchstr(v:val, ''id=\zs''.s:sign_prefix.''\d\+'')')
+	if lang != 'C'
+		exe "sil lang mess" lang
+	endif
 	return b
 endfu
 
@@ -256,7 +260,8 @@ fu! <sid>AuCmd(arg) "{{{1
 		augroup Signs
 			autocmd!
 			au InsertLeave * :call DynamicSigns#UpdateWindowSigns('marks')
-			au GUIEnter,BufWinEnter,VimEnter *
+			au GUIEnter * call DynamicSigns#ForceUpdate()
+			au BufWinEnter,VimEnter *
 				\ call DynamicSigns#UpdateWindowSigns('')
 			au BufWritePost *
 				\ call DynamicSigns#UpdateWindowSigns('marks')
@@ -275,6 +280,12 @@ fu! <sid>AuCmd(arg) "{{{1
 			autocmd!
 		augroup END
 		augroup! Signs
+		if exists("#CustomSignExpression")
+			augroup CustomSignExpression
+				au!
+			augroup end
+			augroup! CustomSignExpression
+		endif
 	endif
 endfu
 
@@ -292,11 +303,16 @@ fu! <sid>DoSignScrollbarAucmd(arg) "{{{1
 		augroup! SignsScrollbar
 	endif
 endfu
-
+fu! <sid>Redir(args) "{{{1
+	if s:execute
+		let a=execute(a:args)
+	else
+		redir => a | exe a:args |redir end
+	endif
+	return a
+endfu
 fu! <sid>UnPlaceSigns() "{{{1
-	redir => a
-	exe "silent sign place buffer=".bufnr('')
-	redir end
+	let a = <sid>Redir(':sil sign place buffer='.bufnr(''))
 	let b=split(a,"\n")[1:]
 	if empty(b)
 		return
@@ -356,9 +372,11 @@ fu! <sid>UnplaceSignSingle(item) "{{{1
 	if a:item < 0
 		return
 	endif
+	let oldcursor = winsaveview()
 	call cursor(a:item,0)
 	" Vim errors, if the line does not contain a sign
 	sil! sign unplace
+	call winrestview(oldcursor)
 endfu
 
 fu! <sid>UnplaceSignID(id) "{{{1
@@ -435,7 +453,7 @@ fu! <sid>PlaceSigns(...) "{{{1
 			if i > 0
 				continue
 			elseif i < 0
-				" Evaluating expression failed, don't avoid
+				" Evaluating expression failed, avoid
 				" generating more errors for the rest of the lines
 				return
 			endif
@@ -510,13 +528,19 @@ fu! <sid>DefineSigns() "{{{1
 				\ (utf8signs ? '██': '>>'), s:id_hl.Check)
 	"
 	" Custom Signs Hooks
-	for sign in ['OK', 'Warning', 'Error', 'Info', 'Add', 'Arrow', 'Flag',
-		\ 'Delete', 'Stop', 'Line1', 'Line2', 'Line3', 'Line4', 'Line5']
+	for sign in ['OK', 'Warning', 'Error', 'Info', 'Add', 'Arrow', 'Flag', 'Delete', 'Stop']
+				\ + ['Line1', 'Line2', 'Line3', 'Line4', 'Line5']
+				\ + ['Gutter1', 'Gutter2', 'Gutter3', 'Gutter4', 'Gutter5']
+				\ + range(1,99)
 		let icn  = (icon ? 'icon='. s:i_path : '')
 		let text = ""
 		let texthl = ''
 		let line = 0
-		if sign ==     'OK'
+		if sign =~# '^\d\+$'
+			let icn  = ''
+			let text = sign
+			let texthl = 'Normal'
+		elseif sign ==     'OK'
 			let text = (utf8signs ? '✓' : 'OK')
 			let icn  = (empty(icn) ? '' : icn . 'checkmark.bmp')
 		elseif sign == 'Warning'
@@ -547,6 +571,10 @@ fu! <sid>DefineSigns() "{{{1
 			let icn  = ''
 			let line = matchstr(sign, 'Line\zs\d')+0
 			let texthl = 'Normal'
+		elseif sign =~# 'Gutter\d'
+			let icn  = ''
+			let text = ' '
+			let texthl = 'SignLine'. matchstr(sign, 'Gutter\zs\d')+0
 		endif
 
 		let def = printf("sign define SignCustom%s %s texthl=%s %s %s", 
@@ -930,18 +958,24 @@ fu! <sid>PlaceSignHook(line) "{{{1
 			let a = eval(expr)
 			let result = matchstr(a,
 				\'Warning\|OK\|Error\|Info\|Add\|Arrow\|Flag\|'.
-				\ 'Delete\|Stop\|Line\d')
+				\ 'Delete\|Stop\|Line\d\|Gutter\d\|\d\+')
 			if empty(result)
 				let result = 'Info'
 			endif
 			let oldSign = match(s:Signs, '^\s*\w\+='. a:line.
 					\ '\D.*=SignCustom')
 			if a || !empty(a)
-				if oldSign == -1
-					exe "sign place ". <sid>NextID(). " line=". a:line.
-						\ " name=SignCustom". result. " buffer=". bufnr('')
+				if oldSign >= 0
+					let oldSignname = matchstr(s:Signs[oldSign], 'SignCustom\zs\S\+\ze')
+					" need to unplace old signs
+					if oldSignname !=# result
+						call <sid>UnplaceSignSingle(a:line)
+					else
+						return 0
+					endif
 				endif
-				return 1
+				exe "sign place ". <sid>NextID(). " line=". a:line.
+					\ " name=SignCustom". result. " buffer=". bufnr('')
 			elseif oldSign >= 0
 				" Custom Sign no longer needed, remove it
 				call <sid>UnplaceSignSingle(a:line)
@@ -1090,7 +1124,6 @@ fu! <sid>GetPattern(mark) "{{{1
 endfu
 
 fu! <sid>UpdateDiffSigns(DiffSigns) "{{{1
-	
 	if empty(a:DiffSigns)
 		" nothing to do
 		return
@@ -1126,21 +1159,21 @@ fu! DynamicSigns#UpdateWindowSigns(ignorepat) "{{{1
 		return
 	endtry
 	" Only update, if there have been changes to the buffer
+	" or force parameter is set
 	if b:dynamicsigns_tick != b:changedtick
 		let b:dynamicsigns_tick = b:changedtick
 		if !s:SignScrollbar
 			call <sid>PlaceSigns(line('w0'), line('w$'))
 		endif
-		" Redraw Screen
-		"exe "norm! \<C-L>"
 	endif
 	if s:SignScrollbar
 		call DynamicSigns#UpdateScrollbarSigns()
 	endif
-	if s:SignHook
+	if s:SignHook && !empty(get(w:, 'Signs_Hook', ''))
 		let s:ignore = ['alternate', 'diff', 'marks', 'whitespace', 'indentation']
 		exe printf(":%d,%dfolddoopen :call <snr>%d_PlaceSignHook(line('.'))",
 			\ line('w0'), line('w$'), s:sid)
+		"call DynamicSigns#Run()
 	endif
 	if s:BookmarkSigns
 		call <sid>DoBookmarkHL()
@@ -1190,16 +1223,14 @@ fu! DynamicSigns#MapBookmark() "{{{1
 			exe sign_cmd
 			let indx = []
 			" unplace previous mark for this sign
-			let pat = 'id='.s:sign_prefix.'\(\d\+\)[^=]*=SignBookmark\('.char.'\)'
+			let pat = 'line=\(\d\+\)\s\+id=\('.s:sign_prefix.'\d\+\)[^=]*=SignBookmark\('.char.'\)'
 			let indx = matchlist(s:Signs, pat)
 			while !empty(indx)
 				let line = indx[1]
-				let mark = indx[2]
-				if getpos('.') != getpos(mark) && mark != char
-					call <sid>UnplaceSignID(s:sign_prefix.line)
-					sil! call matchdelete(s:BookmarkSignsHL[mark])
-					sil! call matchdelete(s:BookmarkSignsHL[char])
-				endif
+				let id   = indx[2]
+				let mark = indx[3]
+				call <sid>UnplaceSignID(id)
+				sil! call matchdelete(s:BookmarkSignsHL[mark])
 
 				let index = match(s:Signs, pat)
 				call remove(s:Signs, index)
@@ -1226,11 +1257,11 @@ fu! DynamicSigns#MapKey() "{{{1
 	endif
 endfu
 
-fu! DynamicSigns#Update() "{{{1
+fu! DynamicSigns#Update(...) "{{{1
 	if exists("s:SignScrollbar") && s:SignScrollbar
 		call DynamicSigns#UpdateScrollbarSigns()
 	else
-		call DynamicSigns#Run(1)
+		call DynamicSigns#Run(0, line('w0'), line('w$'))
 	endif
 endfu
 
@@ -1246,7 +1277,13 @@ fu! DynamicSigns#Run(...) "{{{1
 			call <sid>WarningMsg()
 		return
 	endtry
-	call <sid>PlaceSigns()
+	if exists("a:2") && exists("a:3")
+		" only update signs in current window
+		" e.g. :UpdateSigns has been called
+		call <sid>PlaceSigns(a:2, a:3)
+	else
+		call <sid>PlaceSigns()
+	endif
 	set nolz
 	call winrestview(_a)
 endfu
@@ -1268,7 +1305,7 @@ fu! DynamicSigns#CleanUp() "{{{1
 endfu
 
 fu! DynamicSigns#PrepareSignExpression(arg) "{{{1
-	let g:Signs_Hook = a:arg
+	let w:Signs_Hook = a:arg
 	call <sid>Init()
 	let old_ignore = s:ignore
 	" only update the sign expression
@@ -1288,7 +1325,7 @@ fu! DynamicSigns#SignsQFList(local) "{{{1
 	endif
 	call <sid>Init()
 	let qflist = []
-	redir => a| exe "sil sign place" |redir end
+	let a = <sid>Redir(':sil sign place')
 	for sign in split(a, "\n")
 		if match(sign, '^Signs for \(.*\):$') >= 0
 			let fname = matchstr(sign, '^Signs for \zs.*\ze:$')
@@ -1312,6 +1349,10 @@ fu! DynamicSigns#SignsQFList(local) "{{{1
 	call call(func, args)
 	unlet s:no_qf_autocmd 
 	copen
+endfu
+
+fu! DynamicSigns#ForceUpdate() "{{{1
+	call <sid>UpdateView(1)
 endfu
 
 fu! DynamicSigns#QFSigns() "{{{1

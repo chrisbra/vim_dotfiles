@@ -41,7 +41,7 @@ fu! <SID>Init() "{{{2
     let s:matchid = []
 
     " On which keywords to trigger, comma separated list of keywords
-    let s:attach_check = 'attach,attachment,angehängt,Anhang'
+    let s:attach_check = 'attach,attachment,enclose,CV,cover letter,.doc,.pdf,.tex,Anhang,häng,Wiedervorlage,Begleitschreiben,anbei'
     let s:attach_check .= exists("g:attach_check_keywords") ? 
 	\ g:attach_check_keywords : ''
     
@@ -124,6 +124,12 @@ fu! <SID>CheckAlreadyAttached(line) "{{{2
     call setpos('.', cpos)
 endfu
 
+fu! <SID>HeaderEnd() "{{{2
+    " returns last line which has a E-Mail header line
+    1
+    call search('^\m$', 'W')
+    return search('^\m[a-zA-Z-]\+:', 'bW')
+endfu
 fu! <SID>CheckAttach() "{{{2
     " This function checks your mail for the words specified in
     " check, and if it find them, you'll be asked to attach
@@ -135,12 +141,20 @@ fu! <SID>CheckAttach() "{{{2
 	return
     endif
     let s:oldpos = winsaveview()
-    1
     " Needed for function <sid>CheckNewLastLine()
-    let s:header_end = search('^$', 'W')
+    let s:header_end = <sid>HeaderEnd()
+    if s:header_end == 0
+	call <sid>WarningMsg('No headers detected, cannot add Attach header')
+	call <sid>WriteBuf(v:cmdbang)
+	return
+    endif
+
     let s:lastline = line('$')
     1
-    let val = join(split(escape(s:attach_check,' \.+*'), ','),'\|')
+    " split by non-escaped comma
+    let val = join(split(s:attach_check, '\m\\\@<!,'),'\|')
+    " remove backslashes in front of escaped commas
+    let val = substitute(val, '\m\\,', ',', 'g')
     " don't match in the quoted part of the message
     let pat = '\(^\s*>\+.*\)\@<!\c\%(' . val . '\)'
     let prompt = "Attach file: (leave empty to abort): "
@@ -151,16 +165,7 @@ fu! <SID>CheckAttach() "{{{2
 
     " Search starting at the line, that contains the subject
     let subjline = search('^Subject:', 'W')
-    let subj = getpos('.')
     " Move after the header line (so we don't match the Subject line
-    noa norm! }0
-    if line('.') == line('$')
-      1 
-      " this is a hack, to find the last header line,
-      " just in case there was no empty line between header and body
-      " see issue https://github.com/chrisbra/CheckAttach/issues/8
-      call search('\%(\%([-A-Za-z]\+\):.*\)\+\n\ze[^:]*$', 'W')
-    endif
     let ans = 1
     if search(pat, 'nW') && !<sid>CheckAlreadyAttached(subjline)
 	" Delete old highlighting, don't pollute buffer with matches
@@ -173,11 +178,10 @@ fu! <SID>CheckAttach() "{{{2
 	redr!
 	let ans = input(prompt, "", "file")
         while (ans != '') && (ans != 'n')
-	    norm! }-
 	    if empty(s:external_file_browser)
 		let list = split(expand(ans), "\n")
 		for attach in list
-		    call append(line('.'), 'Attach: ' .
+		    call append(s:header_end, 'Attach: ' .
 			\ escape(fnamemodify(attach, ':p'), " \t\\"))
 		    redraw
 		endfor
@@ -191,7 +195,7 @@ fu! <SID>CheckAttach() "{{{2
 			\ fnamemodify(ans, ':h'))
 		let ans = 'n'
 	    endif
-	    call setpos('.', subj)
+	    call setpos('.', s:header_end)
         endwhile
 	call <SID>CheckNewLastLine()
     endif
@@ -222,9 +226,7 @@ fu! <SID>AttachFile(...) "{{{2
     endif
 
     let s:oldpos = winsaveview()
-    1
-    let s:header_end = search('^$', 'W')
-    norm! -
+    let s:header_end = <sid>HeaderEnd()
     let s:lastline = line('$')
     let rest = copy(a:000)
 

@@ -279,6 +279,7 @@ endif
 "}}}
 " Colorscheme initialization "{{{
 " ---------------------------------------------------------------------
+let s:old_colors_name=get(g:, 'colors_name', '')
 hi clear
 if exists("syntax_on")
   syntax reset
@@ -565,7 +566,9 @@ endif
 " exe compiled formats
 
 let _bg = &bg
-exe "hi! Normal"         .s:fmt_none   .s:fg_base0  .s:bg_back
+"if s:old_colors_name !=# 'solarized'
+  exe "hi! Normal"         .s:fmt_none   .s:fg_base0  .s:bg_back
+"endif
 if _bg != &bg
     let &bg=_bg
 endif

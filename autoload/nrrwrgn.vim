@@ -15,6 +15,7 @@
 " Functions:
 
 let s:numeric_sort = v:version > 704 || v:version == 704 && has("patch341")
+let s:getcurpos    = exists('*getcurpos')
 let s:window_type = {"source": 0, "target": 1}
 
 fun! <sid>WarningMsg(msg) abort "{{{1
@@ -338,6 +339,26 @@ fun! <sid>SetupBufWriteCmd(instn) "{{{1
 		au BufWriteCmd <buffer> nested :call s:WriteNrrwRgn(1)
 	endif
 endfu
+fun! <sid>SetupBufWinLeave(instn) "{{{1
+	if !exists("#NrrwRgn".a:instn."#BufWinLeave#<buffer>") &&
+	\ exists("b:orig_buf") && bufloaded(b:orig_buf)
+		au BufWinLeave <buffer> :call s:NRBufWinLeave(b:nrrw_instn)
+	endif
+endfu
+fun! <sid>NRBufWinLeave(instn) "{{{1
+	let nrw_buf  = bufnr('')
+	let orig_win = winnr()
+	let instn    = a:instn
+	let orig_buf = b:orig_buf
+	let orig_tab = tabpagenr()
+	call <sid>JumpToBufinTab(<sid>BufInTab(orig_buf), orig_buf, instn, s:window_type["source"])
+	if !&modifiable
+		set modifiable
+	endif
+	call s:DeleteMatches(instn)
+	call <sid>JumpToBufinTab(orig_tab, nrw_buf, instn, s:window_type["target"])
+endfu
+
 fun! <sid>NrrwRgnAuCmd(instn) abort "{{{1
 	" If a:instn==0, then enable auto commands
 	" else disable auto commands for a:instn
@@ -349,17 +370,11 @@ fun! <sid>NrrwRgnAuCmd(instn) abort "{{{1
 		" :b# and returning back to that buffer later (see issue #44)
 		au BufWipeout,BufDelete <buffer> nested
 					\ :call s:WriteNrrwRgn()
-		"au BufWriteCmd <buffer> nested :call s:WriteNrrwRgn(1)
 		au CursorMoved <buffer> :call s:UpdateOrigWin()
 		" When switching buffer in the original buffer,
 		" make sure the highlighting of the narrowed buffer will
 		" be removed"
-		if bufloaded(b:orig_buf) && exists(b:orig_buf)
-			" for multi narrowed buffers, is not defined!
-			exe "au BufWinLeave <buffer=".b:orig_buf.
-			\ "> if <sid>HasMatchID(".b:nrrw_instn.")|call <sid>DeleteMatches(".
-			\ b:nrrw_instn.")|endif"
-		endif
+		call s:SetupBufWinLeave(b:nrrw_instn)
 		call s:SetupBufWriteCmd(b:nrrw_instn)
 		aug end
 		au BufWinEnter <buffer> call s:SetupBufWriteCmd(b:nrrw_instn)
@@ -434,7 +449,11 @@ fun! <sid>StoreLastNrrwRgn(instn) abort "{{{1
 endfu
 
 fun! <sid>RetVisRegionPos() abort "{{{1
-	return [ getpos("'<"), getpos("'>") ]
+	let a = getpos("'<")
+	let b = getpos("'>")
+	let a[2] = virtcol("'<")
+	let b[2] = virtcol("'>")
+	return [a, b]
 endfun
 
 fun! <sid>GeneratePattern(startl, endl, mode) abort "{{{1
@@ -443,13 +462,18 @@ fun! <sid>GeneratePattern(startl, endl, mode) abort "{{{1
 	"	1) only highlight the block
 	"	2) highlighty from the beginnning until the end of lines (happens,
 	"	   intermediate lines are shorter than block width)
-	if a:mode ==# '' && a:startl[0] > 0 && a:startl[1] > 0
+	if exists("s:curswant") && s:curswant == 2147483647 &&
+			\ a:startl[0] > 0 && a:startl[1] > 0 && a:mode ==# ''
+		unlet! s:curswant
 		return '\%>'. (a:startl[0]-1). 'l\&\%>'. (a:startl[1]-1).
-			\ 'c\&\%<'. (a:endl[0]+1). 'l\&\%<'. (a:endl[1]+1). 'c'
+			\ 'v\&\%<'. (a:endl[0]+1). 'l'
+	elseif a:mode ==# '' && a:startl[0] > 0 && a:startl[1] > 0
+		return '\%>'. (a:startl[0]-1). 'l\&\%>'. (a:startl[1]-1).
+			\ 'v\&\%<'. (a:endl[0]+1). 'l\&\%<'. (a:endl[1]+1). 'v'
 	elseif a:mode ==# 'v' && a:startl[0] > 0 && a:startl[1] > 0
 		" Easy way: match within a line
 		if a:startl[0] == a:endl[0]
-			return '\%'.a:startl[0]. 'l\%>'.(a:startl[1]-1).'c.*\%<'.(a:endl[1]+1).'c'
+			return '\%'.a:startl[0]. 'l\%>'.(a:startl[1]-1).'v.*\%<'.(a:endl[1]+1).'v'
 		else
 		" Need to generate concat 3 patterns:
 		"  1) from startline, startcolumn till end of line
@@ -458,9 +482,9 @@ fun! <sid>GeneratePattern(startl, endl, mode) abort "{{{1
 		"
 		" example: Start at line 1 col. 6 until line 3 column 12:
 		" \%(\%1l\%>6v.*\)\|\(\%>1l\%<3l.*\)\|\(\%3l.*\%<12v\)
-		return  '\%(\%'.  (a:startl[0]). 'l\%>'.   (a:startl[1]-1). 'c.*\)\|'.
+		return  '\%(\%'.  (a:startl[0]). 'l\%>'.   (a:startl[1]-1). 'v.*\)\|'.
 			\	'\%(\%>'. (a:startl[0]). 'l\%<'.   (a:endl[0]).     'l.*\)\|'.
-			\   '\%(\%'.  (a:endl[0]).   'l.*\%<'. (a:endl[1]+1).   'c\)'
+			\   '\%(\%'.  (a:endl[0]).   'l.*\%<'. (a:endl[1]+1).   'v\)'
 		endif
 	elseif a:startl[0] > 0
 		return '\%>'. (a:startl[0]-1). 'l\&\%<'. (a:endl[0]+1). 'l'
@@ -591,10 +615,14 @@ fun! <sid>DeleteMatches(instn) abort "{{{1
 		for item in s:nrrw_rgn_lines[a:instn].matchid
 			if item > 0
 				" If the match has been deleted, discard the error
-				exe (s:debug ? "" : "silent!") "call matchdelete(item)"
+				try
+					call matchdelete(item)
+					call remove(s:nrrw_rgn_lines[a:instn].matchid, 0)
+				catch
+					" id not found ignore
+				endtry
 			endif
 		endfor
-		let s:nrrw_rgn_lines[a:instn].matchid=[]
 	endif
 endfun
 
@@ -772,11 +800,11 @@ fun! <sid>NrrwSettings(on) abort "{{{1
 		setl noswapfile buftype=acwrite foldcolumn=0
 		setl nobuflisted
 		let instn = matchstr(bufname(''), '_\zs\d\+$')+0
-		if has_key(s:nrrw_rgn_lines, 'instn')
+		if has_key(s:nrrw_rgn_lines, s:instn)
 			if  !&hidden && !has_key(s:nrrw_rgn_lines[instn], "single")
 				setl bufhidden=wipe
 			else
-				setl bufhidden=hide
+				setl bufhidden=delete
 			endif
 		endif
 	else
@@ -998,7 +1026,6 @@ fun! nrrwrgn#NrrwRgnDoMulti(...) abort "{{{1
 		return
 	endif
 	let o_lz = &lz
-	let s:o_s  = @/
 	set lz
 	let orig_buf=bufnr('')
 
@@ -1071,11 +1098,21 @@ fun! nrrwrgn#NrrwRgn(mode, ...) range  abort "{{{1
 	" This beeps, when called from command mode
 	" e.g. by using :NRV, so using :sil!
 	" else exiting visual mode
-		exe "sil! norm! \<ESC>"
+		if s:getcurpos && a:mode ==# ''
+			" This is an ugly hack, since there does not seem to be a
+			" possibility to find out, if we  are in block-wise '$' mode or
+			" not (try pressing '$' in block-wise mode)
+			if !hasmapto('let s:curswant', 'v')
+				xmap <expr> <Plug>NrrwrgnGetCurswant ":\<c-u>let s:curswant=".getcurpos()[4]."\n"
+			endif
+			" Reselect visual mode
+			exe ":norm gv\<Plug>NrrwrgnGetCurswant"
+		else
+			exe "sil! norm! \<ESC>"
+		endif
 	endif
 	let bang = (a:0 > 0 && !empty(a:1))
 	let o_lz = &lz
-	let s:o_s  = @/
 	set lz
 	call <sid>Init()
 	if visual
@@ -1089,15 +1126,15 @@ fun! nrrwrgn#NrrwRgn(mode, ...) range  abort "{{{1
 
 	call <sid>CheckProtected()
 	if visual
-	let [ s:nrrw_rgn_lines[s:instn].start,
-		\ s:nrrw_rgn_lines[s:instn].end ] = <sid>RetVisRegionPos()
-	norm! gv"ay
-	if len(split(@a, "\n", 1)) !=
+		let [ s:nrrw_rgn_lines[s:instn].start,
+			\ s:nrrw_rgn_lines[s:instn].end ] = <sid>RetVisRegionPos()
+		norm! gv"ay
+		if len(split(@a, "\n", 1)) !=
 			\ (s:nrrw_rgn_lines[s:instn].end[1] -
 			\ s:nrrw_rgn_lines[s:instn].start[1] + 1)
 			" remove trailing "\n"
 			let @a=substitute(@a, '\n$', '', '')
-	endif
+		endif
 		let a = split(@a, "\n")
 	else
 		let first = a:firstline
@@ -1284,14 +1321,12 @@ fun! nrrwrgn#WidenRegion(force)  abort "{{{1
 		" then where we started, else we might accidentally
 		" set a match in the narrowed window (might happen if the
 		" user typed Ctrl-W o in the narrowed window)
-		if !has_key(s:nrrw_rgn_lines[instn], 'single') && winnr != winnr()
+		if !(has_key(s:nrrw_rgn_lines[instn], 'single') || winnr != winnr())
 			call <sid>AddMatches(<sid>GeneratePattern(
 				\ s:nrrw_rgn_lines[instn].start[1:2],
 				\ s:nrrw_rgn_lines[instn].end[1:2],
 				\ s:nrrw_rgn_lines[instn].vmode),
 				\ instn)
-		else
-			noa b #
 		endif
 	" 3) :NR started selection
 	else
@@ -1348,7 +1383,6 @@ fun! nrrwrgn#WidenRegion(force)  abort "{{{1
 		"  become invalid, if CleanUp is executed)
 "	endif
 	call <sid>SaveRestoreRegister(_opts)
-	let  @/=s:o_s
 	" Execute "written" autocommands in the original buffer
 	if exists("b:nrrw_aucmd_written")
 		exe b:nrrw_aucmd_written

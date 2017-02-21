@@ -20,17 +20,12 @@
 " the effort.  Maybe someone seeing this may decide otherwise...
 
 "set background=dark
-if version > 580
-    " no guarantees for version 5.8 and below, but this makes it stop
-    " complaining
-    hi clear
-    if exists("syntax_on")
-        syntax reset
-    endif
+hi clear
+if exists("syntax_on")
+    syntax reset
 endif
 let g:colors_name="cb256"
 
-if has("gui_running") || &t_Co == 88 || &t_Co == 256
     " functions {{{
     " returns an approximate grey index for the given grey level
     fun! <SID>grey_number(x)
@@ -105,7 +100,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " returns the palette index for the given grey index
-    fun <SID>grey_color(n)
+    fun! <SID>grey_color(n)
         if &t_Co == 88
             if a:n == 0
                 return 16
@@ -126,7 +121,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " returns an approximate color index for the given color level
-    fun <SID>rgb_number(x)
+    fun! <SID>rgb_number(x)
         if &t_Co == 88
             if a:x < 69
                 return 0
@@ -153,7 +148,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " returns the actual color level for the given color index
-    fun <SID>rgb_level(n)
+    fun! <SID>rgb_level(n)
         if &t_Co == 88
             if a:n == 0
                 return 0
@@ -174,7 +169,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " returns the palette index for the given R/G/B color indices
-    fun <SID>rgb_color(x, y, z)
+    fun! <SID>rgb_color(x, y, z)
         if &t_Co == 88
             return 16 + (a:x * 16) + (a:y * 4) + a:z
         else
@@ -183,7 +178,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " returns the palette index to approximate the given R/G/B color levels
-    fun <SID>color(r, g, b)
+    fun! <SID>color(r, g, b)
         " get the closest grey
         let l:gx = <SID>grey_number(a:r)
         let l:gy = <SID>grey_number(a:g)
@@ -218,7 +213,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " returns the palette index to approximate the 'rrggbb' hex string
-    fun <SID>rgb(rgb)
+    fun! <SID>rgb(rgb)
         let l:r = ("0x" . strpart(a:rgb, 0, 2)) + 0
         let l:g = ("0x" . strpart(a:rgb, 2, 2)) + 0
         let l:b = ("0x" . strpart(a:rgb, 4, 2)) + 0
@@ -227,7 +222,7 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     endfun
 
     " sets the highlighting for the given group
-    fun <SID>X(group, fg, bg, attr)
+    fun! <SID>X(group, fg, bg, attr)
         if a:fg != ""
             exec "hi " . a:group . " guifg=#" . a:fg 
         endif
@@ -243,10 +238,16 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     "call <SID>X("Normal", "cccccc", "000000", "")
     "call <SID>X("Normal", "white", "black", "")
     "hi Normal guifg=#cccccc guibg=#000000 ctermbg=black
-    hi Normal guifg=#cccccc 
 
     " highlight groups
-    call <SID>X("Cursor", "708090", "f0e68c", "")
+    hi Normal guifg=GhostWhite guibg=black
+    hi Cursor guifg=AliceBlue guibg=black
+    hi ModeMsg guifg=SlateGray guibg=black
+    hi NonText guifg=CornflowerBlue guibg=white
+    hi IncSearch guifg=PowderBlue guibg=white
+    hi MoreMsg guifg=MediumTurquoise guibg=black
+    hi Search guifg=aqua guibg=black
+    finish
     "CursorIM
     "Directory
     "DiffAdd
@@ -310,48 +311,5 @@ if has("gui_running") || &t_Co == 88 || &t_Co == 256
     delf <SID>grey_level
     delf <SID>grey_number
     " }}}
-else
-    " color terminal definitions
-    hi SpecialKey    ctermfg=darkgreen
-    hi NonText       cterm=bold ctermfg=darkblue
-    hi Directory     ctermfg=darkcyan
-    hi ErrorMsg      cterm=bold ctermfg=7 ctermbg=1
-    hi IncSearch     cterm=NONE ctermfg=yellow ctermbg=green
-    hi Search        cterm=NONE ctermfg=grey ctermbg=blue
-    hi MoreMsg       ctermfg=darkgreen
-    hi ModeMsg       cterm=NONE ctermfg=brown
-    hi LineNr        ctermfg=3
-    hi Question      ctermfg=green
-    hi StatusLine    cterm=bold,reverse
-    hi StatusLineNC  cterm=reverse
-    hi VertSplit     cterm=reverse
-    hi Title         ctermfg=5
-    hi Visual        cterm=reverse
-    hi VisualNOS     cterm=bold,underline
-    hi WarningMsg    ctermfg=1
-    hi WildMenu      ctermfg=0 ctermbg=3
-    hi Folded        ctermfg=darkgrey ctermbg=NONE
-    hi FoldColumn    ctermfg=darkgrey ctermbg=NONE
-    hi DiffAdd       ctermbg=4
-    hi DiffChange    ctermbg=5
-    hi DiffDelete    cterm=bold ctermfg=4 ctermbg=6
-    hi DiffText      cterm=bold ctermbg=1
-    hi Comment       ctermfg=darkcyan
-    hi Constant      ctermfg=brown
-    hi Special       ctermfg=5
-    hi Identifier    ctermfg=6
-    hi Statement     ctermfg=3
-    hi PreProc       ctermfg=5
-    hi Type          ctermfg=2
-    hi Underlined    cterm=underline ctermfg=5
-    hi Ignore        ctermfg=darkgrey
-    hi Error         term=reverse cterm=bold ctermfg=white ctermbg=1
-"    hi Error         cterm=bold ctermfg=7 ctermbg=1
-"
-    hi Pmenu          gui=NONE   guifg=#eeeeee   guibg=#4e4e8f
-    hi PmenuSel       gui=BOLD   guifg=#eeeeee   guibg=#2e2e3f
-    hi PmenuSbar      gui=BOLD   guifg=#eeeeee   guibg=#6e6eaf
-    hi PmenuThumb     gui=BOLD   guifg=#eeeeee   guibg=#6e6eaf
-endif
 
 " vim: set fdl=0 fdm=marker:

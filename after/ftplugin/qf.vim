@@ -5,8 +5,9 @@ nnoremap <buffer> <CR> :call QfEnter()<CR>
 
 function! QfEnter()
     let l:lnum = line('.')
+    let qf = IsQuickfix()
     wincmd p
-    if IsQuickfix()
+    if qf
       exe 'cc' l:lnum
     else
       exe 'll' l:lnum

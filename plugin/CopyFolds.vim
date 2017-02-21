@@ -1,4 +1,4 @@
-function CopyNonFolded()
+function! CopyNonFolded()
 let lnum=1
 let buffer=[]
 while lnum <= line("$")

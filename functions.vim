@@ -488,3 +488,36 @@ function! SpellLegend()
     endfor
 endfunction
 command! -bar SpellLegend call SpellLegend()
+
+" command PP: print lines like :p or :# but with with current search pattern highlighted
+command! -nargs=? -range -bar PP :call PrintWithSearchHighlighted(<line1>,<line2>,<q-args>)
+function! PrintWithSearchHighlighted(line1,line2,arg)
+  let line=a:line1
+  while line <= a:line2
+    echo ""
+    if a:arg =~ "#"
+      echohl LineNr
+      echo strpart(" ",0,7-strlen(line)).line."\t"
+      echohl None
+    endif
+    let l=getline(line)
+    let index=0
+    while 1
+      let b=match(l,@/,index)
+      if b==-1
+        echon strpart(l,index)
+        break
+      endif
+      let e=matchend(l,@/,index)
+      if e == b
+        let e += 1
+      endif
+      echon strpart(l,index,b-index)
+      echohl Search
+      echon strpart(l,b,e-b)
+      echohl None
+      let index = e
+    endw
+    let line=line+1
+  endw
+endfunction

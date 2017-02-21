@@ -22,6 +22,7 @@ Copyright: (c) 2009, 2010, 2011, 2012 by Christian Brabandt
         2.6   Display Signs to display changes.........: |Signs-Diff|
         2.7   Alternating colors.......................: |Signs-Alternate|
         2.8   ASCII Scrollbar..........................: |Signs-Scrollbar|
+        2.9   SignHighlighting.........................: |Signs-Highlight|
         3.  Autocommands...............................: |Signs-Autocommands|
         4.  Commands...................................: |Signs-Commands|
         5.  Icons......................................: |Signs-Icons|
@@ -90,8 +91,9 @@ bookmarks in your buffer and sets the mark. (|:k| does not update the signs,
 Use |:Signs| or |:UpdateSigns| to manually update the view in case this is
 needed).
 
-2.4 Dynamicly display Signs                                     *Signs-Hook*
----------------------------
+                                                          *:SignExpression*
+2.4 SignExpressions                                        *Signs-Hook*
+-------------------
 
 You can let Vim have an expression evaluated for each line in your current
 buffer. On each line, where this expression is true, Vim will place a sign
@@ -105,9 +107,10 @@ its argument, which will be evaluated for each line. Use the variable
 Say, you want to place a sign on each line, that contains 'TODO'. You simply
 enter >
 
-    :SignExpression getline(v:lnum)=~'TODO'
+    :SignExpression getline(v:lnum)=~'TODO'?'Warning':0
 
 This will place a sign on each line, that contains the word TODO
+This expression is window-local.
 
 As a special return value for the expression, you can return the type of sign
 that should be placed. Currently the following sign types are understood: >
@@ -126,10 +129,22 @@ that should be placed. Currently the following sign types are understood: >
     Line3
     Line4
     Line5
+    Gutter1
+    Gutter2
+    Gutter3
+    Gutter4
+    Gutter5
+    1-99
+    0
 <
 All except for "Line" only draw a flag in the sign column while the sign types
-"Line1"-"Line5" highlights the complete line without displaying anything in the Sign
-Column. It uses the SignLine1-SignLine5 highlighting group for highlighting those lines.
+"Line1"-"Line5" highlights the complete line without displaying anything in
+the Sign Column. "Gutter1"-"Gutter5" highlights only the gutter column, but
+does not draw anything inside it. It uses the SignLine1-SignLine5 highlighting
+groups for highlighting (|Signs-Highlight|)
+
+The special return value 0 is meant to not place a sign, all other numbers
+simply stand for themselves, e.g. will draw the corresponding number.
 
 For example you want to highlight all Lines that contain the word 'TODO' with
 the todo sign. Therefore you call the command: >
@@ -138,6 +153,43 @@ the todo sign. Therefore you call the command: >
 
 Note, the Expression will be re-evaluated for that buffer on Changes to the
 buffer.
+
+                                                       *relativenumber_signs*
+
+Here is an example, on how to draw relative numbers but only every fifth line.
+First define a custom function like the following. You can usually just do
+that in your |.vimrc| >
+
+  fu! CustomSignExpression(lnum, div)
+      if a:lnum < line('w0') || a:lnum > line ('w$')
+          return 0
+      endif
+      if !exists("#CustomSignExpression#CursorMoved")
+          augroup CustomSignExpression
+              au!
+              au CursorMoved * :Signs
+              au VimResized  * :UpdateSigns
+          augroup end
+      endif
+      let part=abs(a:lnum - line('.'))
+      if part % a:div == 0
+          return part > 99 ? 99 : part
+      else
+          return 0
+      endif
+  endfu
+
+Then you simply call: >
+  :SignExpression CustomSignExpression(v:lnum, 5)
+
+This makes sure, the relative numbers will only be drawn on every fifth line.
+Adjust the second number if you want it at other intervals. The autocommand
+is there to make sure, it will be re-evaluated on cursor changes. By default,
+custom sign expressions are only evaluated once the text changes, but this is
+needed here, or else the relative line numbering will get out of sync soon.
+Note it is recommended to use the CustomSignExpression |augroup|, as this will
+be automatically cleaned up on the |:DisableSigns| command, if one exists,
+otherwise the autocommand will still trigger although it probably should not.
 
 2.5 Display signs for quickfix items                            *Signs-QF*
 ------------------------------------
@@ -174,8 +226,8 @@ alternating colors. To do so, set the g:Signs_Alternate variable in your
 
     :let g:Signs_Alternate = 1
 <
-This will display each even line nummer in one color and each odd line
-number in a different color.
+This will display each evenly numbered line in one color and each oddly
+numbered line in a different color.
 
 Run |:UpdateSigns| or |:Signs| to update displaying the signs in your
 buffer.
@@ -195,6 +247,20 @@ This will enable the Scrollbar and disable all other Sign features.
 Unfortunately, this does not work well with |folds| and therefore the
 scrollbar can't be displayed on a folded line. Also Linewrapping 'wrap' can
 disturb the display of the scrollbar.
+
+2.9 Sign Highlighting                                        *Signs-Highlight*
+---------------------
+
+By default the plugin defines the following highlighting groups: >
+
+    SignLine1   - gray
+    SignLine2   - orange
+    SignLine3   - blue
+    SignLine4   - red
+    SignLine5   - yellow
+
+You can however override those highlighting groups, by predefining them in
+your |.vimrc| to whatever you want.
 
 3.0 Autocommands                                      *:Signs-Autocommands*
 ----------------
@@ -308,6 +374,7 @@ third line of this document.
   Charles, thanks!)
 - Update SignExpressions on Changes to buffer or when switching to the gui
 - Do not clean the signs, when starting up
+- Make the |:SignExpression| command window-local
 0.1: Mar 15, 2012 {{{1
 
 - Initial upload

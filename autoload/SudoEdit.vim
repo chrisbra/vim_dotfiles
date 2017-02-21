@@ -1,11 +1,11 @@
 " SudoEdit.vim - Use sudo/su for writing/reading files with Vim
 " ---------------------------------------------------------------
-" Version:  0.20
+" Version:  0.21
 " Authors:  Christian Brabandt <cb@256bit.org>
-" Last Change: Thu, 27 Mar 2014 23:19:50 +0100
+" Last Change: Thu, 15 Jan 2015 20:57:15 +0100
 " Script:  http://www.vim.org/scripts/script.php?script_id=2709
 " License: VIM License
-" GetLatestVimScripts: 2709 20 :AutoInstall: SudoEdit.vim
+" GetLatestVimScripts: 2709 21 :AutoInstall: SudoEdit.vim
 
 " Functions: "{{{1
 
@@ -141,6 +141,9 @@ fu! <sid>LocalSettings(values, readflag, file) "{{{2
             " are used when creating the vbs and cmd file.
             set nossl
         endif
+        " reset undoreload
+        let o_ur = &ur
+        setl ur=0
         call <sid>Init()
         if empty(a:file)
             let file = expand("%")
@@ -159,7 +162,7 @@ fu! <sid>LocalSettings(values, readflag, file) "{{{2
             au!
             au FileChangedShell <buffer> :call SudoEdit#FileChanged(expand("<afile>"))
         augroup END
-        return [o_srr, o_ar, o_tti, o_tte, o_shell, o_stmp, o_ssl, file]
+        return [o_srr, o_ar, o_tti, o_tte, o_shell, o_stmp, o_ssl, o_ur, file]
     else
         " Make sure, persistent undo information is written
         " but only for valid files and not empty ones
@@ -171,57 +174,64 @@ fu! <sid>LocalSettings(values, readflag, file) "{{{2
                 return
             endif
             if has("persistent_undo")
-            let undofile = undofile(file)
-            if !empty(file) &&
-                \!<sid>CheckNetrwFile(@%) && !empty(undofile) &&
-                \ &l:udf
-                if !a:readflag
-                " Force reading in the buffer to avoid stupid W13 warning
-                " don't do this in GUI mode, so one does not have to enter
-                " the password again (Leave the W13 warning)
-                if !has("gui_running") && exists("s:new_file") && s:new_file
-                    "sil call <sid>SudoRead(file)
-                    " Be careful, :e! within a BufWriteCmd can crash Vim!
-                    exe "e!" file
-                endif
-                call <sid>Exec("wundo! ". fnameescape(undofile))
-                if <sid>Is("unix") && !empty(undofile) && s:error_exists == 0
-                    let ufile = string(shellescape(undofile, 1))
-                    let perm = system("stat -c '%u:%g' " .
-                        \ shellescape(file, 1))[:-2]
-                    " Make sure, undo file is readable for current user
-                    let cmd  = printf("!%s sh -c 'test -f %s && ".
-                        \ "chown %s -- %s && ",
-                        \ join(s:AuthTool, ' '), ufile, perm, ufile)
-                    let cmd .= printf("chmod a+r -- %s 2>%s'", ufile, shellescape(s:error_file))
-                    if has("gui_running")
-                        call <sid>echoWarn("Enter password again for".
-                            \ " setting permissions of the undofile")
+                let undofile = undofile(file)
+                if !empty(file) &&
+                    \!<sid>CheckNetrwFile(@%) && !empty(undofile) &&
+                    \ &l:udf
+                    if !a:readflag
+                        " Force reading in the buffer to avoid stupid W13 warning
+                        " don't do this in GUI mode, so one does not have to enter
+                        " the password again (Leave the W13 warning)
+                        if !has("gui_running") && exists("s:new_file") && s:new_file
+                            "sil call <sid>SudoRead(file)
+                            " Be careful, :e! within a BufWriteCmd can crash Vim!
+                            exe "e!" file
+                        endif
+                        call <sid>Exec("wundo! ". fnameescape(undofile))
+                        if <sid>Is("unix") && !empty(undofile)
+                            let ufile = string(shellescape(undofile, 1))
+                            let perm = system("stat -c '%u:%g' " .
+                                \ shellescape(file, 1))[:-2]
+                            " Make sure, undo file is readable for current user
+                            let cmd  = printf("!%s sh -c 'test -f %s && ".
+                                \ "chown %s -- %s && ",
+                                \ join(s:AuthTool, ' '), ufile, perm, ufile)
+                            let cmd .= printf("chmod a+r -- %s 2>%s'", ufile, shellescape(s:error_file))
+                            if has("gui_running")
+                                call <sid>echoWarn("Enter password again for".
+                                    \ " setting permissions of the undofile")
+                            endif
+                            call <sid>Exec(cmd)
+                        endif
+                        " Check if undofile is readable
+                        if !filereadable(undofile) &&
+                            \ &undodir =~ '^\.\($\|,\)'
+                            " Can't create undofile
+                            call add(s:msg, "Can't create undofile in current " .
+                            \ "directory, skipping writing undofiles!")
+                            throw "sudo:undofileError"
+                        elseif !filereadable(undofile)
+                            " Writing undofile not possible
+                            call add(s:msg,  "Error occured, when writing undofile")
+                            return
+                        endif
                     endif
-                    call <sid>Exec(cmd)
                 endif
-                " Check if undofile is readable
-                if !filereadable(undofile) &&
-                    \ &undodir =~ '^\.\($\|,\)'
-                    " Can't create undofile
-                    call add(s:msg, "Can't create undofile in current " .
-                    \ "directory, skipping writing undofiles!")
-                    throw "sudo:undofileError"
-                elseif !filereadable(undofile)
-                    " Writing undofile not possible
-                    call add(s:msg,  "Error occured, when writing undofile")
-                    return
-                endif
-                endif
-            endif
             endif " has("persistent_undo")
         catch
             " no-op
         finally
             " Make sure W11 warning is triggered and consumed by 'ar' setting
-            checktime
+            "checktime
+            "let _ur=&ur
+            "setl ur=0
+
+            " Call undojoin, but catch 'undojoin is not allowed after undo'.
+            try | undojoin | catch /^Vim\%((\a\+)\)\=:E790/ | endtry
+            exe "edit" file
+            "let &ur=_ur
             " Reset old settings
-            let [ &srr, &l:ar, &t_ti, &t_te, &shell, &stmp, &ssl ] = values
+            let [ &srr, &l:ar, &t_ti, &t_te, &shell, &stmp, &ssl, &ur ] = values
         endtry
     endif
 endfu
@@ -289,7 +299,7 @@ fu! <sid>SudoRead(file) "{{{2
         endif
     endif
     filetype detect
-    set nomod
+    set nomodified
 endfu
 
 fu! <sid>SudoWrite(file) range "{{{2
@@ -297,15 +307,16 @@ fu! <sid>SudoWrite(file) range "{{{2
         " prevent E139 error
         exe "bw!" s:writable_file
     endif
+    let file=resolve(a:file)
     if  s:AuthTool[0] == 'su'
         " Workaround since su cannot be run with :w !
         exe "sil keepalt noa ". a:firstline . ',' . a:lastline . 'w! ' . s:writable_file
         let cmd=':!' . join(s:AuthTool, ' ') . '"mv ' . s:writable_file . ' ' .
-            \ shellescape(a:file,1) . '" -- 2>' . shellescape(s:error_file)
+            \ shellescape(file,1) . '" -- 2>' . shellescape(s:error_file)
     else
         if <sid>Is("win")
             exe 'sil keepalt noa '. a:firstline . ',' . a:lastline . 'w! ' . s:writable_file[1:-2]
-            let file = shellescape(fnamemodify(a:file, ':p:8'))
+            let file = shellescape(fnamemodify(file, ':p:8'))
             " Do not try to understand the funny quotes...
             " That looks unreadable currently...
             let cmd= printf('!%s%s%s%s write %s %s %s',
@@ -314,13 +325,15 @@ fu! <sid>SudoWrite(file) range "{{{2
                 \ (s:IsUAC ? '"' : join(s:AuthTool, ' ')))
         else
             let cmd=printf('%s >/dev/null 2>%s %s', <sid>Path('tee'),
-                \ shellescape(s:error_file), shellescape(a:file,1))
+                \ shellescape(s:error_file), shellescape(file,1))
             let cmd=a:firstline . ',' . a:lastline . 'w !' .
                 \ join(s:AuthTool, ' ') . cmd
         endif
     endif
-    if <sid>CheckNetrwFile(a:file) && exists(":NetUserPass") == 2
-        let protocol = matchstr(a:file, '^[^:]:')
+    " Call undojoin, but catch 'undojoin is not allowed after undo'.
+    let cmd='try | undojoin | catch /^Vim\%((\a\+)\)\=:E790/ | endtry | '.cmd
+    if <sid>CheckNetrwFile(file) && exists(":NetUserPass") == 2
+        let protocol = matchstr(file, '^[^:]:')
         call <sid>echoWarn('Using Netrw for writing')
         let uid = input(protocol . ' username: ')
         let passwd = inputsecret('password: ')
@@ -329,20 +342,27 @@ fu! <sid>SudoWrite(file) range "{{{2
         w
     else
         let s:new_file = 0
-        if empty(glob(a:file))
+        if empty(glob(file))
             let s:new_file = 1
         endif
         " Record last modification time (this is used to prevent W11 warning
         " later
-        let g:buf_changes[bufnr(fnamemodify(a:file, ':p'))] = localtime()
+        let g:buf_changes[bufnr(fnamemodify(file, ':p'))] = localtime()
         call <sid>Exec(cmd)
+        augroup SudoEditWrite
+            au! BufWriteCmd <buffer>
+            au BufWriteCmd <buffer> :exe ":SudoWrite ". expand("<afile>")
+        augroup END
     endif
     if v:shell_error
         throw "sudo:writeError"
     endif
     " Write successful
     if &mod
-        setl nomod
+        setl nomodified
+    endif
+    if get(g:, 'SudoEdit_skip_wundo', 1)
+        let s:skip_undo = 1
     endif
 endfu
 

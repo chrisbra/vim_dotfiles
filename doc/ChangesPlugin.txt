@@ -2,7 +2,7 @@
 
 Author:  Christian Brabandt <cb@256bit.org>
 Version: 0.15 Thu, 15 Jan 2015 21:16:40 +0100
-Copyright: (c) 2010-2014 by Christian Brabandt
+Copyright: (c) 2010-2016 by Christian Brabandt
 
                                            *ChangesPlugin-copyright*
 The VIM LICENSE applies to ChangesPlugin.txt (see |copyright|)
@@ -65,8 +65,7 @@ Alternatively, you can enter the shortcut >
 which basically calls :EnableChanges and supports the same arguments.
 
 If errors happen, the current buffer will be silently ignored when :EC
-is called later. Use the ! attribute, to force reevaluating the command (and
-see error messages).
+is called later.
 
                                                     *:DC* *:DisableChanges*
 If you want to disable the plugin, enter >
@@ -257,12 +256,12 @@ g:changes_sign_text_utf8 (default 1)
     If set, will use nice little UTF8 symbols for displaying the indicator
     signs.
 
-g:changes_max_filesize (default 500)
+g:changes_max_filesize (default 0)
 ------------------------------------
 
     Maximum size in kbytes of a buffer, for which to perform the check. Larger
     buffers will likely slow down Vim considerably, since it needs to perform
-    diffs and parse the result often.
+    diffs and parse the result often. (default: off)
 
                                                         *ChangesPlugin-colors*
 Specify different colors
@@ -302,6 +301,8 @@ appearing SignColumn (|hl-SignColumn|) To enable, set in your |.vimrc| >
 
     let g:changes_fixed_sign_column=1
 <
+(not used for Vim 8 which has the 'signcolumn' setting.)
+
 g:changes_fast (default: 1)
 --------------------------
 If set (which it is by default), skip creating diffs at a couple occasions.
@@ -350,6 +351,8 @@ third line of this document.
         https://github.com/chrisbra/changesPlugin/pull/14, thanks!
         BF: Document that |:ChangesFoldDiff| toggles
         BF: Make |:ChangesFoldDiff| show context lines
+        BF: check, that the file exists in git
+        NF: use signcolumn function if available
     0.15: Jan 15, 2015:                                                 {{{1
         NF: use |TextChanged| autocommand to update signs faster
         NF: use new utf8 symbols

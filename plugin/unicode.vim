@@ -24,12 +24,25 @@ fu! <sid>ToggleUnicodeCompletion() "{{{2
     let g:Unicode_complete_name = (get(g:, 'Unicode_complete_name') == '' ? 1 : !g:Unicode_complete_name)
     echo "Unicode Completion Names " .(g:Unicode_complete_name?'ON':'OFF')
 endfu
+fu! <sid>UNCompleteList(A,C,P) "{{{2
+    if len(split(a:C)) < 2
+        return split("abcdefghijklmnopqrstuvwxyz0123456789\\+*", '\zs')
+    else
+        return filter(['digraph','regex','name','html','value'],
+            \  'v:val=~#a:A')
+    endif
+endfu
 " Public Interface: {{{1
-com! -nargs=?       UnicodeName	    call unicode#GetUniChar(<q-args>)
+com! -nargs=* -complete=customlist,<sid>UNCompleteList      UnicodeName	    call unicode#GetUniChar(<f-args>)
 com! -nargs=? -bang Digraphs	    call unicode#PrintDigraphs(<q-args>, <q-bang>)
-com! -nargs=1       SearchUnicode   call unicode#PrintUnicode(<q-args>)
+" deprecated
+com! -nargs=1       SearchUnicode   call unicode#PrintUnicode(<q-args>, '')
+com! -nargs=1 -bang UnicodeSearch   call unicode#PrintUnicode(<q-args>, <q-bang>=='!')
 com!		    UnicodeTable    call unicode#PrintUnicodeTable()
+com! -nargs=1       DigraphNew	    call unicode#MkDigraphNew(<f-args>)
+" deprecated
 com!		    DownloadUnicode call unicode#Download(1)
+com!		    UnicodeDownload call unicode#Download(1)
 
 " Setup Mappings
 nnoremap <unique><script><silent> <Plug>(MakeDigraph)	    :set opfunc=unicode#GetDigraph<CR>g@
@@ -39,23 +52,23 @@ inoremap <unique><script><silent> <Plug>(DigraphComplete)   <C-R>=unicode#Comple
 inoremap <unique><script><silent> <Plug>(UnicodeComplete)   <C-R>=unicode#CompleteUnicode()<CR>
 nnoremap <unique><script><silent> <Plug>(UnicodeSwapCompleteName) :<C-U>call <sid>ToggleUnicodeCompletion()<CR>
 
-if !hasmapto('<Plug>(MakeDigraph)', 'n')
+if !hasmapto('<Plug>(MakeDigraph)', 'n') && maparg('<f4>', 'n') ==# ''
     nmap <F4> <Plug>(MakeDigraph)
 endif
 
-if !hasmapto('<Plug>(MakeDigraph)', 'v')
+if !hasmapto('<Plug>(MakeDigraph)', 'v') && maparg('<f4>', 'v') ==# ''
     vmap <F4> <Plug>(MakeDigraph)
 endif
 
-if !hasmapto('<Plug>(DigraphComplete)', 'i')
+if !hasmapto('<Plug>(DigraphComplete)', 'i') && maparg('<c-x><c-g>', 'i') ==# ''
     imap <C-X><C-G> <Plug>(DigraphComplete)
 endif
 
-if !hasmapto('<Plug>(UnicodeComplete)', 'i')
+if !hasmapto('<Plug>(UnicodeComplete)', 'i') && maparg('<c-x><c-z>', 'i') ==# ''
     imap <C-X><C-Z> <Plug>(UnicodeComplete)
 endif
 
-if !hasmapto('<Plug>(UnicodeSwapCompleteName))', 'n')
+if !hasmapto('<Plug>(UnicodeSwapCompleteName))', 'n') && maparg('<leader>un', 'n') ==# ''
     nmap <leader>un <Plug>(UnicodeSwapCompleteName)
 endif
 

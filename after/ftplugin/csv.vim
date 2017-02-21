@@ -1,4 +1,5 @@
 
+finish
 fun! My_CSV_Average(col)
     let sum=0
     for item in a:col

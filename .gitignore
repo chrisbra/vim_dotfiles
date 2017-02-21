@@ -10,6 +10,7 @@ bundle/*
 contrib/*
 doc/*
 ftdetect/*
+pack/dist/start/alt/*
 plugin/*
 spell/*
 spellfile*

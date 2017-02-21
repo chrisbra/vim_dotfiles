@@ -12,9 +12,20 @@ vnoremap ,h :<c-u>1,'<lt>-fold<bar>'>+,$fold<CR>
 
 nnoremap <F7> :call ToggleFoldByCurrentSearchPattern()<CR>
 
+" Move visual selection
+xnoremap <expr> <s-right> 'xp`]' . strpart(getregtype(), 0, 1) . '`['
+xnoremap <expr> <s-left> 'xhhp`]' . strpart(getregtype(), 0, 1) . '`['
+
+" quickly move current line
+nnoremap [e  :<c-u>execute 'move -1-'. v:count1<cr>
+nnoremap ]e  :<c-u>execute 'move +'. v:count1<cr>
+
 " n always searches downwards, N always upwards
 noremap <expr> n 'Nn'[v:searchforward]
 noremap <expr> N 'nN'[v:searchforward]
+
+" quickly edit your macro
+nnoremap <leader>m  :<c-u><c-r>='let @'. v:register .' = '. string(getreg(v:register))<cr><c-f><left>
 
 " don't mess up vim, when inserting with the mouse
 set pastetoggle=<F10> 
@@ -37,6 +48,8 @@ map <leader>do :silent! call ToggleDiffOrig()<CR>
 if exists("*pumvisible")
     inoremap <expr> <Down> pumvisible() ? "\<lt>Down>" : "\<lt>C-O>gj"
     inoremap <expr> <Up>   pumvisible() ? "\<lt>Up>"   : "\<lt>C-O>gk"
+   " experimental
+   inoremap <expr> <silent> <cr> pumvisible() ? "<c-y>" : "<c-g>u<cr>"
 else
    inoremap <Down> <C-\><C-O>gj
    inoremap <Up>   <C-\><C-O>gk
@@ -110,3 +123,40 @@ nnoremap <expr> k (v:count ? 'k' : 'gk')
 "                   registers / all registers (that typically contain
 "                   pasteable text).
 nnoremap <silent> <expr> "" ':<C-u>registers ' . (v:register ==# '"' ? (v:count ? strpart('abcdefghijklmnopqrstuvwxyz', 0, v:count1) : '"0123456789abcdefghijklmnopqrstuvwxyz*+.') : v:register) . "<CR>"
+
+" Paste last yanked item
+noremap <Leader>p "0p
+noremap <Leader>P "0P
+
+
+fu! s:WrapChar(charl,...)
+    let ret = "ciw".a:charl."\<C-R>-"
+    if exists("a:1")
+	let ret .= a:1
+    else
+	let ret .= a:charl
+    endif
+    let ret .= "\<esc>"
+    return ret
+endfu
+nnoremap <expr> <Leader>' s:WrapChar("'")
+nnoremap <expr> <Leader>" s:WrapChar('"')
+nnoremap <expr> <Leader>[ s:WrapChar('[', ']')
+nnoremap <expr> <Leader>( s:WrapChar('(', ')')
+nnoremap <expr> <Leader>{ s:WrapChar('{', '}')
+
+" Use %% in the commandline to expand and add the path
+" of the current buffer
+cnoremap %% <C-R>=fnameescape(expand('%:h')).'/'<cr>
+
+finish
+noremap <expr> <Plug>(StopHL) execute('nohlsearch')[-1]
+noremap! <expr> <Plug>(StopHL) execute('nohlsearch')[-1]
+
+function! s:StopHL()
+    if !v:hlsearch
+        return
+    else
+        call feedkeys("\<Plug>(StopHL)", "m")
+    endif
+endfunction
