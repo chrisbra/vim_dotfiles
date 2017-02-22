@@ -2,8 +2,7 @@
 " Global .vimrc Settings from
 " Christian Brabandt <cb@256bit.org>
 "-------------------------------------------------------
-" Personal Vim Configuration File
-"
+
 " This is already set automatically by sourcing a .vimrc
 " set nocp
 
@@ -11,8 +10,6 @@
 " First, check that the necessary capabilities are compiled-in
 " needs to be set first
 if has("multi_byte")
-  " (optional) remember the locale set by the OS
-  let g:locale_encoding = &encoding
   " if already Unicode, no need to change it
   " we assume that an encoding name is a Unicode one
   " iff its name starts with u or U
@@ -41,13 +38,25 @@ if has("gui")
   set go=cM
 endif
 
-if !empty(glob('$HOME/.vim/autoload/pathogen.vim')) && v:version < 800
+if filereadable('$HOME/.vim/autoload/pathogen.vim') && v:version < 800
   " Use pathogen as plugin manager
   call pathogen#infect()
   call pathogen#helptags()
 elseif v:version >= 800
     " all plugins below ~/.vim/pack/dist/start/* are loaded automatically
 endif
+
+" Turn on filetype detection plugin and indent for specific
+if exists(":filetype") == 2
+  filetype plugin indent on
+endif
+
+" Always turn syntax highlighting on
+" should come after filetype plugin command
+if has("syntax")
+  syntax on
+endif
+
 " Always have ~/.vim at first position.
 set rtp^=~/.vim
 " allow switching of buffers without having to save them
@@ -73,10 +82,6 @@ set nojoinspaces
 set cpo+=$
 " prefer a dark background (important to get the colorscheme right)
 set bg=dark
-" Turn on filetype detection plugin and indent for specific
-if exists(":filetype") == 2
-  filetype plugin indent on
-endif
 " Tweak timeouts, because the default is too conservative
 " This setting is taken from :h 'ttimeoutlen'
 set timeout timeoutlen=3000 ttimeoutlen=100
@@ -102,21 +107,8 @@ set scrollopt+=hor
 set history=1000
 " Commandline Completion
 set wildmode=list:longest,longest:full
-" Always turn syntax highlighting on
-" should come after filetype plugin command
-if has("syntax")
-  syntax on
 
-  " highlight VCS conflict markers
-  " highlight strange Whitespace
-  aug CustomHighlighting
-    au!
-    au WinEnter * if !exists("w:custom_hi1") | let w:custom_hi1 = matchadd('ErrorMsg', '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$') | endif
-    au WinEnter * if !exists("w:custom_hi2") | let w:custom_hi2 = matchadd('ErrorMsg', '[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]') |  endif
-  aug END
-endif
-
-" Tabstop options
+" Tabstop settings
 set ts=2
 " the amount to indent when using ">>" or autoindent (zero means, follow
 " 'tabstop' option)
@@ -151,15 +143,6 @@ endif
 " set dictionary. Press <CTRL>X <CTRL> K for looking up
 " use german words, see debian package `wngerman'
 set dictionary=/usr/share/dict/words
-
-if has("autocmd")
-  aug custom_BufRead
-    au!
-    au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
-    " open file at last position (:h last-position-jump)
-    au BufRead * if line("'\"") > 1 && line("'\"") <= line("$") && &filetype !=# 'gitcommit' | exe "normal! g`\"zvzz" | endif
-  augroup END
-endif
 
 " change language -  get spell files from http://ftp.vim.org/pub/vim/runtime/spell/
 " cd ~/.vim/spell && wget http://ftp.vim.org/pub/vim/runtime/spell/de.latin1.spl
@@ -206,18 +189,14 @@ elseif (&term =~ '^screen')
   execute "set <xDown>=\e[1;*B"
   execute "set <xRight>=\e[1;*C"
   execute "set <xLeft>=\e[1;*D"
-"   mode dependent cursor (switches between block and thin bar)
-"   let &t_ti.="\e[1 q"
-"   let &t_SI.="\e[5 q"
-"   let &t_EI.="\e[1 q"
-"   let &t_te.="\e[0 q"
 elseif (&term =~ 'xterm-256\|xterm-color\|xterm')
   " Let's have 256 Colors. That rocks!
   " Putty and screen are aware of 256 Colors on recent systems
   set t_Co=256 title
-"  let &titleold = fnamemodify(&shell, ":t")
 "  set t_AB=^[[48;5;%dm
 "  set t_AF=^[[38;5;%dm
+"  mode dependent cursor (switches between block and thin bar)
+"  only works in xterm?
 "  let &t_ti.="\e[1 q"
 "  let &t_SI.="\e[5 q"
 "  let &t_EI.="\e[1 q"
@@ -256,29 +235,21 @@ if has("conceal")
   hi! link Conceal Normal
 endif
 
-" tmux does support true color mode
+" enable truecolor even in the terminal
+" tmux does support true color mode (but not putty)
 "if exists('+termguicolors')
 "    set termguicolors
 "    set t_8f=[38;2;%lu;%lu;%lum
 "    set t_8b=[48;2;%lu;%lu;%lum
 "endif
 
-" restore bg value, might have been reset by the colorscheme
-" (might reset the colorscheme?)
-"let &bg=_bg
-"unlet _bg
-
 " In Diff-Mode turn off Syntax highlighting
-if &diff
-  syntax off
-  let &diffexpr='EnhancedDiff#Diff("git diff", "--diff-algorithm=patience")'
-endif
-
-if has('cscope')
-  set cscopetag cscopeverbose
-  if has('quickfix')
-    set cscopequickfix=s-,c-,d-,i-,t-,e-
+if has("diff")
+  if &diff
+    syntax off
   endif
+  " how to check, that enhanceddiff is actually installed?
+  let &diffexpr='EnhancedDiff#Diff("git diff", "--diff-algorithm=patience")'
 endif
 
 if has('persistent_undo')
@@ -300,7 +271,6 @@ if &encoding == "utf-8"
     exe "set sbr=\u21b3"
   else
     " Putty can't display all nice utf-8 chars
-    "exe "set listchars=conceal:·,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,space:\ub7"
     exe "set listchars=conceal:\u00b7,tab:>\u2014,trail:\u02d1,precedes:\u2026,extends:\u2026,eol:\ub6,nbsp:\u03c7"
     exe "set sbr=\u2500"
   endif
@@ -312,10 +282,6 @@ else
   set sbr=+
 endif
 
-" Shift-tab on GNU screen
-" http://superuser.com/questions/195794/gnu-screen-shift-tab-issue
-set t_kB=[Z
-
 if v:version > 704 || v:version == 704 && has("patch711")
   if !exists("$PUTTY_TERM") && $OS isnot# "Windows_NT"
     exe "set listchars+=space:\u2423"
@@ -324,9 +290,9 @@ if v:version > 704 || v:version == 704 && has("patch711")
   endif
 endif
 
-" experimental and debug settings
-" (possibly not even available in vanilla vim)
-" source ~/.vim/experimental.vim
+" Shift-tab on GNU screen
+" http://superuser.com/questions/195794/gnu-screen-shift-tab-issue
+set t_kB=[Z
 
 " In case /tmp get's clean out, make a new tmp directory for vim:
 if has("user_commands")
@@ -336,31 +302,31 @@ if has("user_commands")
   command! Smaller :let &guifont = substitute(&guifont, '\d\+$', '\=submatch(0)-1', '')
 endif
 
-" if ctag or cscope open a file that is already opened elsewhere, make sure to
-" open it in Read-Only Mode
-" http://groups.google.com/group/vim_use/msg/5a1726ea0fd654d1
-if exists("##SwapExists")
-  augroup Custom_Swap
+if has("autocmd")
+  aug custom_BufRead
     au!
-    autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
+    au BufRead changes nmap ,cb o<CR>chrisbra, <ESC>:r!LC_ALL='' date<CR>kJo-
+    " open file at last position (:h last-position-jump)
+    au BufRead * if line("'\"") > 1 && line("'\"") <= line("$") && &filetype !=# 'gitcommit' | exe "normal! g`\"zvzz" | endif
   augroup END
-endif
 
-" skip for vim.tiny
-if 1
-  " This script contains plugin specific settings
-  source ~/.vim/plugins.vim
-  " This script contains mappings
-  source ~/.vim/mapping.vim
-  source ~/.vim/functions.vim
+  " highlight VCS conflict markers
+  " highlight strange Whitespace
+  aug CustomHighlighting
+    au!
+    au WinEnter * if !exists("w:custom_hi1") | let w:custom_hi1 = matchadd('ErrorMsg', '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$') | endif
+    au WinEnter * if !exists("w:custom_hi2") | let w:custom_hi2 = matchadd('ErrorMsg', '[\x0b\x0c\u00a0\u1680\u180e\u2000-\u200a\u2028\u202f\u205f\u3000\ufeff]') |  endif
+  aug END
 
-  " source matchit
-  ru macros/matchit.vim
-
-  " Special Search patterns:
-  let g:SEARCH_VISUAL_END='\%(\%(\%V.*\%V.\)\@>\zs\(.\|$\)\)'
-  " Search literally!
-  com! -nargs=1 Search :let @/='\V'.escape(<q-args>, '\\')| normal! n
+  " if ctag or cscope open a file that is already opened elsewhere, make sure to
+  " open it in Read-Only Mode
+  " http://groups.google.com/group/vim_use/msg/5a1726ea0fd654d1
+  if exists("##SwapExists")
+    augroup Custom_Swap
+      au!
+      autocmd SwapExists * if v:swapcommand =~ '^:ta\%[g] \|^\d\+G$' | let v:swapchoice='o' | endif
+    augroup END
+  endif
 
   function! SetGuiFont()
     if has("gui_gtk") && !has("win32")
@@ -375,11 +341,42 @@ if 1
       autocmd GuiEnter * :call SetGuiFont()
     augroup end
   endif
+endif
 
-  if executable('ag')
+" skip for vim.tiny
+if 1
+  " This script contains plugin specific settings
+  source ~/.vim/plugins.vim
+  " This script contains mappings
+  source ~/.vim/mapping.vim
+  source ~/.vim/functions.vim
+
+  " experimental and debug settings
+  " (possibly not even available in vanilla vim)
+  " source ~/.vim/experimental.vim
+
+  " source matchit
+  ru macros/matchit.vim
+
+  " Special Search patterns:
+  let g:SEARCH_VISUAL_END='\%(\%(\%V.*\%V.\)\@>\zs\(.\|$\)\)'
+  " Search literally!
+  com! -nargs=1 Search :let @/='\V'.escape(<q-args>, '\\')| normal! n
+
+  " use better grep alternatives, if available
+  if executable('ripgrep')
+    set grepprg=ripgrep
+  elseif executable('ag')
     set grepprg=ag
   elseif executable('sift')
     set grepprg=sift
+  endif
+endif
+
+if has('cscope') && executable('cscope')
+  set cscopetag cscopeverbose
+  if has('quickfix')
+    set cscopequickfix=s-,c-,d-,i-,t-,e-
   endif
 endif
 
