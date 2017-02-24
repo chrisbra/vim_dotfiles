@@ -8,7 +8,7 @@
 
 " DoubleQuote: inserts » or « instead of "
 " Modified version of TexQuotes() by Benji Fisher <benji@e-math.AMS.org>
-function! s:DoubleQuote()
+function! s:DoubleQuote() "{{{1
     let l = line(".")
     let c = col(".")
     let restore_cursor = l . "G" . virtcol(".") . "|"
@@ -53,7 +53,7 @@ endfunction
 
 
 " SingleQuote: insert . or . instead of '
-function! s:SingleQuote()
+function! s:SingleQuote() "{{{1
     let close = "."
     let open = "."
     let q = close
@@ -85,7 +85,7 @@ endfunction
 "-------------------------------------------------------
 
 " Update .*rc header
-fun! UpdateRcHeader()
+fun! UpdateRcHeader() "{{{1
     let l:c=col(".")
     let l:l=line(".")
     if search("Last update:") != 0
@@ -106,48 +106,41 @@ endfun
      "autocmd BufWritePre personal.vim :call UpdateRcHeader()
 "augroup END
 
-"-------------------------------------------------------
-" Tabbing
-"-------------------------------------------------------
-if version < 700
-    finish
-else
-    function! MyTabLine()
-      let s = ''
-      for i in range(tabpagenr('$'))
-        " select the highlighting
-        if i + 1 == tabpagenr()
-          let s .= '%#TabLineSel#'
-        else
-          let s .= '%#TabLine#'
-        endif
-
-    "    " set the tab page number (for mouse clicks)
-        let s .= '%' . (i + 1) . 'T'. ' '. (i+1). ' '
-
-        " the label is made by MyTabLabel()
-        let s .= ' %{MyTabLabel(' . (i + 1) . ')} '
-      endfor
-
-      " after the last tab fill with TabLineFill and reset tab page nr
-      let s .= '%#TabLineFill#%T'
-
-      " right-align the label to close the current tab page
-      if tabpagenr('$') > 1
-        let s .= '%=%#TabLine#%999Xclose'
+  function! MyTabLine() "{{{1
+    let s = ''
+    for i in range(tabpagenr('$'))
+      " select the highlighting
+      if i + 1 == tabpagenr()
+        let s .= '%#TabLineSel#'
+      else
+        let s .= '%#TabLine#'
       endif
 
-      return s
-    endfunction
-endif
+  "    " set the tab page number (for mouse clicks)
+      let s .= '%' . (i + 1) . 'T'. ' '. (i+1). ' '
+
+      " the label is made by MyTabLabel()
+      let s .= ' %{MyTabLabel(' . (i + 1) . ')} '
+    endfor
+
+    " after the last tab fill with TabLineFill and reset tab page nr
+    let s .= '%#TabLineFill#%T'
+
+    " right-align the label to close the current tab page
+    if tabpagenr('$') > 1
+      let s .= '%=%#TabLine#%999Xclose'
+    endif
+
+    return s
+  endfunction
         
-function! MyTabLabel(n)
+function! MyTabLabel(n) "{{{1
     let buflist = tabpagebuflist(a:n)
     let winnr = tabpagewinnr(a:n)
 return bufname(buflist[winnr - 1])
 endfunction
 
-function! CompileScript()
+function! CompileScript() "{{{1
     " the name of the current file
     let fname = expand('%')
 
@@ -173,12 +166,12 @@ function! CompileScript()
 
 endfunction
 
-fu! ToggleFoldByCurrentSearchPattern()
+fu! ToggleFoldByCurrentSearchPattern() "{{{1
   if !&foldenable
     set foldenable
     set foldmethod=expr
     set foldexpr=getline(v:lnum)!~@/
-    :normal zM
+    norm! zM
     set foldmethod=manual
     echo "zR to open all folds; zo top open 1 fold; zc to close 1 fold"
   else
@@ -187,16 +180,16 @@ fu! ToggleFoldByCurrentSearchPattern()
 endfu
 
 " Insert the date in a certain format
-function! InsertDate(format)
-        if ! exists('*strftime')
-                echoerr 'strftime() not defined'
-                return -1
-        endif
-        let f = a:format
-        if f == ""
-                let f = '%c'
-        endif
-        exe "normal a\<C-R>=strftime(" . '"' . f . '"' .  ")\e"
+function! InsertDate(format) "{{{1
+  if ! exists('*strftime')
+    echoerr 'strftime() not defined'
+    return -1
+  endif
+  let f = a:format
+  if f == ""
+    let f = '%c'
+  endif
+  exe "normal a\<C-R>=strftime(" . '"' . f . '"' .  ")\e"
 endfunction
 
 " :Date will insert the current date and time in your
@@ -206,135 +199,130 @@ endfunction
 "  14 Nov 2006
 "
  command! -nargs=0 DiffOrig
-      \|let g:ShowDifferencesOriginalBuffer=bufnr('%')
-      \|let DiffFileType=&ft
-      \|execute 'bufdo setlocal nodiff foldcolumn=0'
-      \|execute 'buffer' g:ShowDifferencesOriginalBuffer
-      \|diffthis
-      \|below vert new
-      \|let g:ShowDifferencesScratchWindow=winnr()
-      \|set buftype=nofile noswapfile bufhidden=wipe
-      \|let &ft=DiffFileType
-      \|unlet DiffFileType
-      \|r #
-      \|1d
-      \|setlocal noma
-      \|diffthis
+  \| let g:ShowDifferencesOriginalBuffer=bufnr('%')
+  \| let DiffFileType=&ft
+  \| execute 'bufdo setlocal nodiff foldcolumn=0'
+  \| execute 'buffer' g:ShowDifferencesOriginalBuffer
+  \| diffthis
+  \| below vert new
+  \| let g:ShowDifferencesScratchWindow=winnr()
+  \| set buftype=nofile noswapfile bufhidden=wipe
+  \| let &ft=DiffFileType
+  \| unlet DiffFileType
+  \| r #
+  \| 1d
+  \| setlocal noma
+  \| diffthis
 
  command! -nargs=0 NoDiffOrig
-     \|let CurrentWinNr=winnr()
-     \|execute g:ShowDifferencesScratchWindow 'wincmd w'
-     \|setlocal nodiff foldcolumn=0
-     \|close
-     \|setlocal nodiff foldcolumn=0
-     \|execute CurrentWinNr 'wincmd w'
-     \|unlet CurrentWinNr
+  \| let CurrentWinNr=winnr()
+  \| execute g:ShowDifferencesScratchWindow 'wincmd w'
+  \| setlocal nodiff foldcolumn=0
+  \| close
+  \| setlocal nodiff foldcolumn=0
+  \| execute CurrentWinNr 'wincmd w'
+  \| unlet CurrentWinNr
 
- func! ToggleDiffOrig()
-     if exists("g:DiffOriginal")
-         NoDiffOrig
-         unlet g:DiffOriginal
-     else
-         DiffOrig
-         let g:DiffOriginal=1
-     endif
+ func! ToggleDiffOrig() "{{{1
+  if exists("g:DiffOriginal")
+    NoDiffOrig
+    unlet g:DiffOriginal
+  else
+    DiffOrig
+    let g:DiffOriginal=1
+  endif
  endfunc
 
-fu! DiffUnified()
-        let diffexpr="diff -Nuar"
-        let bname=bufname("")
-        let origtemp=0
-        " Case 1: File has a filename and is not modified
-        if !&modified && !empty(bname)
-            let tempfile=0
-            let origFile=bname.".orig"
-        else
-        " Case 2: File has a filename and is modified
-            if &modified && !empty(bname)
-                if !filereadable(bname.".orig")
-                    sp 
-                    enew
-                    r #
-                    0d
-                    let tempfile2=tempname()
-                    exe ":sil w! " .tempfile2
-                    wincmd q
-                    let origtemp=1
-                    wincmd p
-                endif
-                let origFile=bname.".orig"
-        "       let bname=tempname()
-        "       exe ":sil w! ".bname
-        "       let tempfile=1
-        " Case 2: File is new and is modified
-            else
-                if &modified
-                    let origFile=bname.".orig"
-                else
-                    let origFile=""
-                endif
-            endif
-            let bname=tempname()
-            exe ":sil w! ".bname
-            let tempfile=1
-        endif
-        try
-            if !filereadable(origFile) 
-                let origFile=input("With which file to diff?: ","","file")
-            endif
-            if !filereadable(bname)
-                exe ":sil w! ".bname
-            endif
-            if empty(origFile)
-                throw "nofile"
-            endif
-            exe "sil sp"
-            exe "enew"
-            set bt=nofile
-            exe "sil r!".diffexpr." ".origFile." ".bname
-            exe "0d_"
-            exe "set ft=diff"
-            " Clean up temporary files
-            if  tempfile == 1
-                exe "sil :!rm -f ". bname
-                let tempfile=0
-            endif
-            if origtemp == 1
-                exe "sil :!rm -f ". origFile
-                let origtemp=0
-            endif
-        catch
-        endtry
+fu! DiffUnified() "{{{1
+  let diffexpr="diff -Nuar"
+  let bname=bufname("")
+  let origtemp=0
+  " Case 1: File has a filename and is not modified
+  if !&modified && !empty(bname)
+    let tempfile=0
+    let origFile=bname.".orig"
+  else
+  " Case 2: File has a filename and is modified
+    if &modified && !empty(bname)
+      if !filereadable(bname.".orig")
+        sp 
+        enew
+        r #
+        0d
+        let tempfile2=tempname()
+        exe ":sil w! " .tempfile2
+        wincmd q
+        let origtemp=1
+        wincmd p
+      endif
+      let origFile=bname.".orig"
+  " Case 3: File is new and is modified
+    else
+      if &modified
+        let origFile=bname.".orig"
+      else
+        let origFile=""
+      endif
+    endif
+    let bname=tempname()
+    exe ":sil w! ".bname
+    let tempfile=1
+  endif
+  try
+    if !filereadable(origFile) 
+      let origFile=input("With which file to diff?: ","","file")
+    endif
+    if !filereadable(bname)
+      exe ":sil w! ".bname
+    endif
+    if empty(origFile)
+      throw "nofile"
+    endif
+    exe "sil sp"
+    exe "enew"
+    set bt=nofile
+    exe "sil r!".diffexpr." ".origFile." ".bname
+    exe "0d_"
+    exe "set ft=diff"
+    " Clean up temporary files
+    if  tempfile == 1
+      exe "sil :!rm -f ". bname
+      let tempfile=0
+    endif
+    if origtemp == 1
+      exe "sil :!rm -f ". origFile
+      let origtemp=0
+    endif
+  catch
+  endtry
 endf
 
 command! MakePatch :call DiffUnified()
 
 if has('user_commands')
-        "command! -nargs=0 -bar WhatSyntax echomsg synIDattr(synID(line("."), col("."), 1), "name")
-        "command! -nargs=0 WhatSyntax echomsg synIDattr(synID(line("."), col("."), 0), "name")
-        command! -nargs=0 WhatSyntax call WhatSyntax()
-        command! -bar ShowSyntax :echo 'Normal '.join(map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")'))
+  command! -nargs=0 WhatSyntax call WhatSyntax()
+  command! -bar ShowSyntax :echo 'Normal '.join(map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")'))
 endif
 
-fu! WhatSyntax()
+fu! WhatSyntax() "{{{1
 " show highlight groups under cursor with F10
-    if exists(':for')
-         echo "<" .
-	    \ synIDattr(synIDtrans(synID(line('.'),col('.'),1)),'name')
-	    \ .'> from:'
-        let indent = ''
-        for syn_id in synstack(line('.'), col('.'))
-          echo indent.'<'.synIDattr(syn_id,"name").'>' 
-          let indent .= ' '
-        endfor
-        unlet indent
-    else
-  " can't do for loop, at least display something
+  if exists(':for')
+    echo "<" .
+    \ synIDattr(synIDtrans(synID(line('.'),col('.'),1)),'name')
+    \ .'> from:'
+    let indent = ''
+    for syn_id in synstack(line('.'), col('.'))
+      echo indent.'<'.synIDattr(syn_id,"name").'>' 
+      let indent .= ' '
+    endfor
+    unlet indent
+  else
+" can't do for loop, at least display something
     echo "hi<" . 
-	\ synIDattr(synID(line("."),col("."),1),"name")
-        \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
-        \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"
-    endif
+      \ synIDattr(synID(line("."),col("."),1),"name")
+      \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+      \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"
+  endif
 endfu
 
 " RS will execute a search within a visually selected area
@@ -351,147 +339,44 @@ command! -nargs=* -bar Date call InsertDate(<q-args>)
 "exe 'so ' . mycolors[localtime() % len(mycolors)]
 "unlet mycolors
 "
-function! CleverTab() 
-           if pumvisible() 
-             return "\<C-N>" 
-           endif 
-   if strpart( getline('.'), 0, col('.')-1 ) =~ '^\s*$' 
-      return "\<Tab>" 
-   elseif exists('&omnifunc') && &omnifunc != '' 
-      return "\<C-X>\<C-O>" 
-   else 
-      return "\<Tab>" 
+function! CleverTab()  "{{{1
+  if pumvisible() 
+    return "\<C-N>" 
   endif 
+  if strpart( getline('.'), 0, col('.')-1 ) =~ '^\s*$' 
+    return "\<Tab>" 
+  elseif exists('&omnifunc') && &omnifunc != '' 
+    return "\<C-X>\<C-O>" 
+  else 
+    return "\<Tab>" 
+endif 
 endfunction 
 "inoremap <Tab> <C-R>=CleverTab()<CR> 
 
-"augroup TimeSpentEditing
-"au!
-"au VimEnter,BufRead,BufNew * call setbufvar(str2nr(expand('<abuf>')),
-"                    \ 'tstart', reltime())
-"augroup END
-
-function! GDigraph(arg)
-    let old=@a
-    redir @a
-    silent digraphs
-    redir end
-    " let b=match(@a,a:arg)
-    if (strlen(substitute(a:arg, ".", "x", "g")) == 1)
-	let pat='..\s' . a:arg . '\s\+\d\+'
-    else
-	if ( a:arg !~ '\d\{2,}')
-	    let pat = escape(a:arg, '.+~*\\') . '\s\+.'
-	else
-	    let pat = '..\s\+.\s\+' . str2nr(a:arg) . '\ze\%(\s\|\n\)'
-	endif
-    endif
-	
-    let i=1
-    while (match(@a,pat,0,i) > 0)
-	if (exists("b"))
-	    let b.="\n".matchstr(@a,pat,0,i)
-	else
-	    let b=matchstr(@a,pat,0,i)
-	endif
-	let i+=1
-    endwhile
-    redraw
-    let @a=old
-    return printf("%s",b)
-    "return 0
-endfu
-
-function! GDigraph1(arg)
-    let old=@a
-    redir @a
-    silent digraphs
-    redir end
-    let list = split(@a, '..\s\+.\{1,2}\s\+\d\+\zs\(\s\+\|\n\)')
-    let @a=old
-    if (strlen(substitute(a:arg, ".", "x", "g")) == 1)
-	let search=char2nr(a:arg)
-    else
-	let search=a:arg
-    endif
-	"let pat = '\<' . char2nr(a:arg) . '\>$'
-    let pat = '\<' . char2nr(a:arg) . '\>$'
-"    else
-"	let pat = '\C\<' . escape(a:arg, '.+~*\\') . '\>'
-"    endif
-
-    let i=1
-    let idx=match(list,pat)
-    while ( idx >= 0)
-        if (exists("b"))
-            let b.="\n" . list[idx]
-        else
-            let b=list[idx]
-        endif
-        let i+=1
-	let idx=match(list,pat,0,i)
-    endwhile
-    redraw
-    return exists("b")?printf("%s",b):"nothing found!"
-endfu
-
-command! -nargs=1 GetDigraph :echo GDigraph1(<q-args>)
-
-function! CompleteDigraph1(findstart,base)
-    if a:findstart
-	let line = getline('.')
-	let start = col('.') - 1
-	while start > 0 && line[start - 1] =~ '\a'
-	    let start -= 1
-	endwhile
-	return start
-    else
-	" get this index file from
-	" http://www.unicode.org/Public/UNIDATA/Index.txt
-	let list=readfile(expand("~/.vim/Index.txt"))
-	let i=1
-	let idx=match(list,a:base)
-	while ( idx >= 0)
-	    let nr = str2nr(matchstr(list[idx], '\x\+$'),16)
-	    call complete_add({'word':nr2char(nr), 'abbr':list[idx], 'icase':1, 'menu':printf("%s",nr2char(nr))})
-	    let i+=1
-	    let idx=match(list,a:base,0,i)
-	    if complete_check()
-		break
-	    endif
-	endwhile
-	return {}
-    endif
-endfun
-
-
-"set completefunc=CompleteDigraph1
-
-function! Info(cmd)
-      execute "new|r!info --subnodes --output - ". a:cmd
+function! Info(cmd) "{{{1
+  execute "new|r!info --subnodes --output - ". a:cmd
 endfunction
 com! -nargs=* Info call Info(<f-args>)
 
-function! SpellLegend()
-    for [l:group, l:explanation] in [
-    \   ['SpellBad', 'word not recognized'],
-    \   ['SpellCap', 'word not capitalized'],
-    \   ['SpellRare', 'rare word'],
-    \   ['SpellLocal', 'wrong spelling for selected region']
-    \]
-        echo ''
-        echon l:group . "\t"
-        execute 'echohl' l:group
-        echon 'xxx'
-        echohl None
-        echon "\t" . l:explanation
-    endfor
+function! SpellLegend() "{{{1
+  for [l:group, l:explanation] in [
+  \   ['SpellBad', 'word not recognized'],
+  \   ['SpellCap', 'word not capitalized'],
+  \   ['SpellRare', 'rare word'],
+  \   ['SpellLocal', 'wrong spelling for selected region']
+  \]
+    echo ''
+    echon l:group . "\t"
+    execute 'echohl' l:group
+    echon 'xxx'
+    echohl None
+    echon "\t" . l:explanation
+  endfor
 endfunction
 command! -bar SpellLegend call SpellLegend()
 
 " command PP: print lines like :p or :# but with with current search pattern highlighted
-command! -nargs=? -range -bar PP :call PrintWithSearchHighlighted(<line1>,<line2>,<q-args>)
-function! PrintWithSearchHighlighted(line1,line2,arg)
+function! PrintWithSearchHighlighted(line1,line2,arg) "{{{1
   let line=a:line1
   while line <= a:line2
     echo ""
@@ -521,3 +406,40 @@ function! PrintWithSearchHighlighted(line1,line2,arg)
     let line=line+1
   endw
 endfunction
+command! -nargs=? -range -bar PP :call PrintWithSearchHighlighted(<line1>,<line2>,<q-args>)
+
+function! ShowOldfiles(mods, filter) "{{{1
+  let i=1
+  let length=len(v:oldfiles)
+  if length < 1 
+    echo "no oldfiles available"
+    return
+  endif
+  for val in v:oldfiles
+    if val =~? a:filter
+      echon printf("%*d) ", strlen(length), i)
+      if !empty(a:filter)
+        let [start, end] = [match(val, a:filter), matchend(val, a:filter)]
+        echon strpart(val, 0, start)
+        echohl WarningMsg
+        echon strpart(val, start, end-start)
+        echohl Normal
+        echon strpart(val, end)."\n"
+      else
+        echon val."\n"
+      endif
+      "echo printf("%*d) %s", strlen(length), i, val)
+    endif
+    let i+=1
+  endfor
+  let input=input('Enter number of file to open: ')
+  if empty(input)
+      return
+  elseif input !~? '^\d\+' || input > length
+      echo "invalid number selected, aborting..."
+  else
+      exe a:mods ":e " v:oldfiles[input-1]
+  endif
+endfu
+com! -nargs=? Oldfiles :call ShowOldfiles(<q-mods>, <q-args>)
+
